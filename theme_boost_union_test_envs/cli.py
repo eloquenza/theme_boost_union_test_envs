@@ -2,18 +2,14 @@ import sys
 from typing import Any
 
 import fire
-from dependency_injector.wiring import Provide, inject
 from loguru import logger
 
 from .core import BoostUnionTestEnvCore
-from .di_containers import Application
-from .services import TestContainerService, TestInfrastructureService
-
-"""BoostUnionTestEnvCLI capsulates all possible commands to provide a CLI. While it is not needed to be in a single class, we still want to do so, even it's just for making sure we are not shadowing python built-ins (see help).
-"""
 
 
 class BoostUnionTestEnvCLI:
+    """BoostUnionTestEnvCLI capsulates all possible commands to provide a CLI. While it is not needed to be in a single class, we still want to do so, even it's just for making sure we are not shadowing python built-ins (see help)."""
+
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
@@ -47,15 +43,7 @@ class BoostUnionTestEnvCLI:
         print('Test environments for the Moodle theme "Boost Union"')
 
 
-@inject
-def main(
-    infra_service: TestInfrastructureService = Provide[
-        Application.services.infrastructure
-    ],
-    container_service: TestContainerService = Provide[
-        Application.services.test_container
-    ],
-) -> None:
+def cli_main(core: BoostUnionTestEnvCore) -> None:
     config: dict[str, Any] = {
         "handlers": [
             {
@@ -68,7 +56,6 @@ def main(
         ],
     }
     logger.configure(**config)
-    core = BoostUnionTestEnvCore(container_service, infra_service)
     cli = BoostUnionTestEnvCLI(core)
     fire.Fire(
         {
