@@ -5,6 +5,10 @@ import sys
 application.
 """
 from theme_boost_union_test_envs import cli
+from theme_boost_union_test_envs.di_containers import Application
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    app = Application()
+    app.wire(packages=["theme_boost_union_test_envs"])
+
     sys.exit(cli.main())
