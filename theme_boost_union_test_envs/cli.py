@@ -5,6 +5,7 @@ import fire
 from loguru import logger
 
 from .core import BoostUnionTestEnvCore
+from .utils.dataclasses import GitReference, GitReferenceType
 
 
 class BoostUnionTestEnvCLI:
@@ -13,9 +14,21 @@ class BoostUnionTestEnvCLI:
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
-    def init(self, name: str, commit: str) -> None:
+    def init(
+        self,
+        name: str,
+        commit: str | None = None,
+        branch: str | None = None,
+        pr: int | None = None,
+    ) -> None:
         try:
-            self.core.initialize_infrastructure(name, commit)
+            if commit:
+                git_ref = GitReference(commit, GitReferenceType.COMMIT)
+            elif branch:
+                git_ref = GitReference(branch, GitReferenceType.BRANCH)
+            elif pr:
+                git_ref = GitReference(pr, GitReferenceType.PULL_REQUEST)
+            self.core.initialize_infrastructure(name, git_ref)
         except ValueError as e:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"

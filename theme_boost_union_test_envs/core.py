@@ -1,4 +1,5 @@
 from .services import TestContainerService, TestInfrastructureService
+from .utils.dataclasses import GitReference
 
 
 class BoostUnionTestEnvCore:
@@ -10,8 +11,8 @@ class BoostUnionTestEnvCore:
         self.containerService = containerService
         self.infraService = infraService
 
-    def initialize_infrastructure(self, name: str, commit: str) -> None:
-        self.infraService.initialize(name, commit)
+    def initialize_infrastructure(self, name: str, git_ref: GitReference) -> None:
+        self.infraService.initialize(name, git_ref)
 
     def build_infrastructure(self, *versions: list[str]) -> None:
         self.infraService.build(*versions)
