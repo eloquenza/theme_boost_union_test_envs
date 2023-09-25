@@ -14,7 +14,12 @@ class BoostUnionTestEnvCLI:
         self.core = core
 
     def init(self, name: str, commit: str) -> None:
-        self.core.initialize_infrastructure(name, commit)
+        try:
+            self.core.initialize_infrastructure(name, commit)
+        except ValueError as e:
+            raise fire.core.FireError(
+                "Your chosen name for the test infrastructure already exists, please choose a different one"
+            ) from e
 
     def build(self, *versions: list[str]) -> None:
         try:

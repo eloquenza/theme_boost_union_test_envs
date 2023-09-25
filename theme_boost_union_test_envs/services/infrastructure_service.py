@@ -1,12 +1,21 @@
 from loguru import logger
 
+from ..adapters import GitAdapter
+
 
 class TestInfrastructureService:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, git: GitAdapter) -> None:
+        self.git = git
 
     def initialize(self, name: str, commit: str) -> None:
-        logger.info(f"init test named {name} from commit {commit} in folder ./{name}")
+        logger.info(f"initializing new test infrastructure named '{name}'")
+        try:
+            repo_path = self.git.clone_repo(name)
+            logger.info("done init - find your test infrastructure here:")
+            logger.info(f"\tpath: {repo_path}")
+        except ValueError as e:
+            logger.error(f"{e}")
+            raise e
 
     def build(self, *versions: list[str]) -> None:
         if not versions:
