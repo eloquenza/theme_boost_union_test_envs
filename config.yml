@@ -1,0 +1,3 @@
+adapters:
+  repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+  working_dir: "./example_pwd"

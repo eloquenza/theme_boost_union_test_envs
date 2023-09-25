@@ -109,3 +109,6 @@ site/
 
 # vscode extension - local history
 .history/
+
+# our default PWD given in the config
+example_pwd/
