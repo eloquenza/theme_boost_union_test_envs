@@ -3,13 +3,16 @@
 Contributions are welcome, and they are greatly appreciated! Every little bit
 helps, and credit will always be given.
 
+Please try to use the [Google style guide](https://google.github.io/styleguide/pyguide.html) whereever possible.
+This way we all have more time arguing about semantics and the project's future instead of pedantic issues.
+
 You can contribute in many ways:
 
 ## Types of Contributions
 
 ### Report Bugs
 
-Report bugs at https://github.com/eloquenza/theme_boost_union_test_envs/issues.
+Report bugs as a [GitHub issue](https://github.com/eloquenza/theme_boost_union_test_envs/issues).
 
 If you are reporting a bug, please include:
 
