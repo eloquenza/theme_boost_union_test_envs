@@ -1,5 +1,9 @@
+import sys
+from typing import Any
+
 import fire
 from dependency_injector.wiring import Provide, inject
+from loguru import logger
 
 from .core import BoostUnionTestEnvCore
 from .di_containers import Application
@@ -52,6 +56,18 @@ def main(
         Application.services.test_container
     ],
 ) -> None:
+    config: dict[str, Any] = {
+        "handlers": [
+            {
+                "sink": sys.stdout,
+                "format": "<green>{time:YYYY-MM-DDTHH:mm:ss!UTC}</green> | {level} | <level>{message}</level>",
+                "backtrace": True,
+                "colorize": True,
+                "diagnose": True,
+            },
+        ],
+    }
+    logger.configure(**config)
     core = BoostUnionTestEnvCore(container_service, infra_service)
     cli = BoostUnionTestEnvCLI(core)
     fire.Fire(
