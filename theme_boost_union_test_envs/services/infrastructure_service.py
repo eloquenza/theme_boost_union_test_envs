@@ -15,9 +15,13 @@ class TestInfrastructureService:
     ) -> None:
         logger.info(f"initializing new test infrastructure named '{name}'")
         try:
-            repo_path = self.git.clone_repo(name, git_ref)
+            self.git.clone_repo(name, git_ref)
             logger.info("done init - find your test infrastructure here:")
-            logger.info(f"\tpath: {repo_path}")
+            from ..di_containers import Application
+
+            logger.info(
+                f"\tpath: {Application().cross_cutting_concerns.config_manager().working_dir}/{name}"
+            )
         except ValueError as e:
             logger.error(f"{e}")
             raise e

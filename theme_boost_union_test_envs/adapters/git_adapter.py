@@ -1,6 +1,4 @@
 import os
-from os import PathLike
-from typing import Any
 
 from git import Repo
 from loguru import logger
@@ -23,7 +21,7 @@ class GitAdapter:
             self.repo_url, repo_dir, progress=GitRemoteProgress(), **clone_args  # type: ignore
         )
 
-    def clone_repo(self, name: str, git_ref: GitReference) -> str | PathLike[str] | Any:
+    def clone_repo(self, name: str, git_ref: GitReference) -> None:
         repo_dir = f"{self.working_dir}/{name}/theme"
         if os.path.exists(repo_dir):
             raise ValueError("Repo already exists")
@@ -56,4 +54,3 @@ class GitAdapter:
 
             # checked out reference is pushed into another var to avoid handling a TypeError in case we wanna check out a commit directly because GitPython complains about the HEAD being in a detached state then.
             logger.info(f"done cloning, checked out: {git_ref}")
-            return repo.working_tree_dir
