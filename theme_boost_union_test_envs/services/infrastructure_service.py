@@ -26,8 +26,28 @@ class TestInfrastructureService:
         if not versions:
             raise ValueError
         logger.info("build envs for the following versions:")
+        # mkdir moodles; skip if already existing
         for ver in versions:
+            # check if ver already exists; continue then
             logger.info(f"* {ver}")
+            # mkdir with ver as name
+            # download moodle sources into each dir - https://github.com/moodle/moodle/archive/refs/tags/v4.2.2.zip
+            # pull moodle-docker into it
+            # replace all the params from moodle-docker with the correct ones:
+            # * adjust the mounts in the docker-compose:
+            #     * add theme mount
+            #     * add moodle sources mount
+            # * COMPOSE_NAME: given by init / folder_name
+            # * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
+            # * NGINX_SERVER_NAME: see COMPOSE_NAME
+            # * absolute path for Moodle source
+            # * absolute path for "Boost Union" theme
+            # * MOODLE_VER
+            # * MOODLE_DOCKER_PHP_VERSION
+        # moodles are cooked al-dente; enjoy
 
     def teardown(self, name: str) -> None:
         logger.info(f"teardown test bed of {name}")
+        # then remove file from nginx; to make sure the moodles cannot be served anymore
+        # then call path rm to delete the folders
+        # then delete the whole folder

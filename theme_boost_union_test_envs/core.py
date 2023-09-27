@@ -18,6 +18,8 @@ class BoostUnionTestEnvCore:
         self.infraService.build(*versions)
 
     def teardown_infrastructure(self, name: str) -> None:
+        # check if container are running, stop them first
+        # then call docker remove to delete the images
         self.infraService.teardown(name)
 
     def start_environment(self, *versions: list[str]) -> None:
