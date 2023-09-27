@@ -9,9 +9,12 @@ from ..utils.dataclasses import GitReference, GitReferenceType
 
 
 class GitAdapter:
-    def __init__(self, repo_url: str, working_dir: str) -> None:
+    def __init__(self, repo_url: str) -> None:
         self.repo_url = repo_url
-        self.working_dir = working_dir
+        from ..di_containers import Application
+
+        config = Application().cross_cutting_concerns.config_manager()
+        self.working_dir = config.working_dir
 
     def __clone_repo(self, repo_dir: str, **clone_args) -> Repo:  # type: ignore
         from ..ui.cli import GitRemoteProgress

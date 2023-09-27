@@ -1,3 +1,6 @@
-adapters:
-  repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+core:
   working_dir: "./example_pwd"
+  moodle_cache_dir: "./moodles"
+adapters:
+  git:
+    boost_union_repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
