@@ -4,8 +4,8 @@ from typing import Any
 import fire
 from loguru import logger
 
-from .core import BoostUnionTestEnvCore
-from .utils.dataclasses import GitReference, GitReferenceType
+from ...core import BoostUnionTestEnvCore
+from ...utils.dataclasses import GitReference, GitReferenceType
 
 
 class BoostUnionTestEnvCLI:
@@ -61,7 +61,7 @@ class BoostUnionTestEnvCLI:
         print('Test environments for the Moodle theme "Boost Union"')
 
 
-def cli_main(core: BoostUnionTestEnvCore) -> None:
+def configure_cli_logger() -> None:
     config: dict[str, Any] = {
         "handlers": [
             {
@@ -74,6 +74,10 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
         ],
     }
     logger.configure(**config)
+
+
+def cli_main(core: BoostUnionTestEnvCore) -> None:
+    configure_cli_logger()
     cli = BoostUnionTestEnvCLI(core)
     fire.Fire(
         {

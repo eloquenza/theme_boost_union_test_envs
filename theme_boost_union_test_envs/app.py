@@ -2,10 +2,10 @@ from enum import Enum
 
 from dependency_injector.wiring import Provide, inject
 
-from .cli import cli_main
 from .core import BoostUnionTestEnvCore
 from .di_containers import Application
 from .services import TestContainerService, TestInfrastructureService
+from .ui import cli_main, gui_main
 
 
 class UserInterface(str, Enum):
@@ -36,6 +36,6 @@ def spawn_interface(
     if interface_choice == UserInterface.CLI:
         cli_main(core)
     elif interface_choice == UserInterface.GUI:
-        raise ValueError("GUI is not yet implemented")
+        gui_main(core)
     else:
         raise ValueError("Please provide a valid interface argument")

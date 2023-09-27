@@ -6,7 +6,6 @@ from git import Repo
 from loguru import logger
 
 from ..utils.dataclasses import GitReference, GitReferenceType
-from ..utils.progressbar import GitRemoteProgress
 
 
 class GitAdapter:
@@ -15,6 +14,8 @@ class GitAdapter:
         self.working_dir = working_dir
 
     def __clone_repo(self, repo_dir: str, **clone_args) -> Repo:  # type: ignore
+        from ..ui.cli import GitRemoteProgress
+
         return Repo.clone_from(
             self.repo_url, repo_dir, progress=GitRemoteProgress(), **clone_args  # type: ignore
         )
