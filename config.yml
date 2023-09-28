@@ -1,6 +1,9 @@
 core:
   working_dir: "./example_pwd"
-  moodle_cache_dir: "./moodles"
+  moodle:
+    # relative to core.working_dir
+    cache_dir: ".moodles/"
+    source_url: "https://github.com/moodle/moodle/archive/refs/tags/"
 adapters:
   git:
     boost_union_repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
