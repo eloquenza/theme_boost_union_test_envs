@@ -1,3 +1,2 @@
 from .container_service import TestContainerService
 from .infrastructure_service import TestInfrastructureService
-from .moodle_service import MoodleService

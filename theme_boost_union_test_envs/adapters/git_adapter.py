@@ -1,20 +1,18 @@
-import os
+from pathlib import Path
 
 from git import Repo
 from loguru import logger
 
+from ..utils.config import get_config
 from ..utils.dataclasses import GitReference, GitReferenceType
 
 
 class GitAdapter:
     def __init__(self, repo_url: str) -> None:
         self.repo_url = repo_url
-        from ..di_containers import Application
+        self.working_dir = get_config().working_dir
 
-        config = Application().cross_cutting_concerns.config_manager()
-        self.working_dir = config.working_dir
-
-    def __clone_repo(self, repo_dir: str, **clone_args) -> Repo:  # type: ignore
+    def __clone_repo(self, repo_dir: Path, **clone_args) -> Repo:  # type: ignore
         from ..ui.cli import GitRemoteProgress
 
         return Repo.clone_from(
@@ -22,8 +20,8 @@ class GitAdapter:
         )
 
     def clone_repo(self, name: str, git_ref: GitReference) -> None:
-        repo_dir = f"{self.working_dir}/{name}/theme"
-        if os.path.exists(repo_dir):
+        repo_dir = self.working_dir / name / "theme"
+        if repo_dir.exists():
             raise ValueError("Repo already exists")
         else:
             logger.info("cloning repository...")

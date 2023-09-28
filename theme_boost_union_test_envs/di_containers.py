@@ -56,3 +56,9 @@ class Application(containers.DeclarativeContainer):
         Services,
         adapters=adapters,
     )
+
+    core = providers.Singleton(
+        BoostUnionTestEnvCore,
+        containerService=services.test_container,
+        infraService=services.infrastructure,
+    )

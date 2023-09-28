@@ -1,6 +1,7 @@
 from loguru import logger
 
 from ..adapters import GitAdapter
+from ..utils.config import get_config
 from ..utils.dataclasses import GitReference
 
 
@@ -17,11 +18,7 @@ class TestInfrastructureService:
         try:
             self.git.clone_repo(name, git_ref)
             logger.info("done init - find your test infrastructure here:")
-            from ..di_containers import Application
-
-            logger.info(
-                f"\tpath: {Application().cross_cutting_concerns.config_manager().working_dir}/{name}"
-            )
+            logger.info(f"\tpath: {get_config().working_dir / name}")
         except ValueError as e:
             logger.error(f"{e}")
             raise e

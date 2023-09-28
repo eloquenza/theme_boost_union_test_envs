@@ -4,7 +4,6 @@ from dependency_injector.wiring import Provide, inject
 
 from .core import BoostUnionTestEnvCore
 from .di_containers import Application
-from .services import TestContainerService, TestInfrastructureService
 from .ui import cli_main, gui_main
 
 
@@ -25,14 +24,8 @@ def main(
 @inject
 def spawn_interface(
     interface_choice: UserInterface,
-    infra_service: TestInfrastructureService = Provide[
-        Application.services.infrastructure
-    ],
-    container_service: TestContainerService = Provide[
-        Application.services.test_container
-    ],
+    core: BoostUnionTestEnvCore = Provide[Application.core],
 ) -> None:
-    core = BoostUnionTestEnvCore(container_service, infra_service)
     if interface_choice == UserInterface.CLI:
         cli_main(core)
     elif interface_choice == UserInterface.GUI:
