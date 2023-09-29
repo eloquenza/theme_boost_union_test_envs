@@ -1,9 +1,14 @@
 core:
   working_dir: "./example_pwd"
   moodle:
-    # relative to core.working_dir
-    cache_dir: ".moodles/"
-    source_url: "https://github.com/moodle/moodle/archive/refs/tags/"
+    cache:
+      # relative to core.working_dir
+      dir: ".moodles/"
 adapters:
   git:
     boost_union_repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+  moodle:
+    downloader:
+      url: "https://github.com/moodle/moodle/archive/refs/tags/"
+      retries: 5
+      retry_timeout: 15

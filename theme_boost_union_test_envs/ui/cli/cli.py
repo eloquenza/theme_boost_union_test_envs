@@ -8,6 +8,7 @@ from ...cross_cutting import log
 from ...domain.git import GitReference, GitReferenceType
 from ...exceptions import (
     InfrastructureDoesNotExistYetError,
+    InvalidMoodleVersionError,
     NameAlreadyTakenError,
     VersionArgumentNeededError,
 )
@@ -64,6 +65,10 @@ class BoostUnionTestEnvCLI:
         except InfrastructureDoesNotExistYetError as e:
             raise fire.core.FireError(
                 "The infrastructure you have given does not exist, please check the spelling"
+            ) from e
+        except InvalidMoodleVersionError as e:
+            raise fire.core.FireError(
+                f"Moodle version {e.version} is invalid, please check if you wrote the correct one."
             ) from e
 
     def start(self, infrastructure_name: str, *versions: str) -> None:

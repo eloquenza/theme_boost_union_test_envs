@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from .adapters import GitAdapter
 from .core import BoostUnionTestEnvCore
 from .cross_cutting import ApplicationConfigManager, ApplicationLogger
-from .domain import MoodleCache
+from .domain import MoodleCache, MoodleDownloader
 from .services import TestContainerService, TestInfrastructureService
 from .ui import cli_main, gui_main
 
@@ -20,15 +20,24 @@ class Adapters(containers.DeclarativeContainer):
         repo_url=config.git.boost_union_repo_url,
     )
 
+    moodle_downloader = providers.Factory(
+        MoodleDownloader,
+        url=config.moodle.downloader.url,
+        retries=config.moodle.downloader.retries,
+        retry_timeout=config.moodle.downloader.retries,
+    )
+
 
 class Domain(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
+    adapters = providers.DependenciesContainer()
+
     moodle_cache = providers.Factory(
         MoodleCache,
-        cache_dir=config.moodle.cache_dir,
-        download_url=config.moodle.source_url,
+        cache_dir=config.moodle.cache.dir,
+        downloader=adapters.moodle_downloader,
     )
 
 
@@ -71,7 +80,11 @@ class Application(containers.DeclarativeContainer):
         config=config.adapters,
     )
 
-    domain = providers.Container(Domain, config=config.core)
+    domain = providers.Container(
+        Domain,
+        adapters=adapters,
+        config=config.core,
+    )
 
     services = providers.Container(
         Services,

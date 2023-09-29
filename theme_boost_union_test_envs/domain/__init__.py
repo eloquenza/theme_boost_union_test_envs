@@ -1,1 +1,1 @@
-from .moodle_repository import MoodleCache
+from .moodle_repository import MoodleCache, MoodleDownloader

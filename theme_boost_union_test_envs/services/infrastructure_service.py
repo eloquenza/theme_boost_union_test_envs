@@ -48,6 +48,7 @@ class TestInfrastructureService:
         for ver in new_versions:
             log().info(f"* {ver}")
         for ver in new_versions:
+            moodle_archive_path = self.moodle_cache.get(ver)
             log().info(f"{20*'-'} {ver} {20*'-'}")
             log().info("creating test env")
             version_path = moodles / ver
@@ -56,7 +57,7 @@ class TestInfrastructureService:
             # unpacking the archive will created a folder called "moodle-{ver}"
             # rename the folder afterwards to ensure moodle sources are at the
             # same location in every created test infrastructure
-            shutil.unpack_archive(self.moodle_cache.get(ver), version_path)
+            shutil.unpack_archive(moodle_archive_path, version_path)
             extracted_path = version_path / f"moodle-{ver}"
             shutil.move(extracted_path, moodle_source_path)
             log().info(f"extracted moodle {ver} to {moodle_source_path}")

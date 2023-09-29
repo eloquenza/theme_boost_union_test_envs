@@ -31,3 +31,10 @@ class UserInterfaceNotYetImplemented(BoostUnionTestEnvValueError):
 class InfrastructureDoesNotExistYetError(BoostUnionTestEnvValueError):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+# if user tries to issue a download for an invalid Moodle Vversion
+class InvalidMoodleVersionError(BoostUnionTestEnvValueError):
+    def __init__(self, version: str, *args: object) -> None:
+        super().__init__(*args)
+        self.version = version
