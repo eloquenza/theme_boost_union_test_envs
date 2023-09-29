@@ -6,7 +6,11 @@ import fire
 from ...core import BoostUnionTestEnvCore
 from ...cross_cutting import log
 from ...domain.git import GitReference, GitReferenceType
-from ...exceptions import NameAlreadyTakenError, VersionArgumentNeededError
+from ...exceptions import (
+    InfrastructureDoesNotExistYetError,
+    NameAlreadyTakenError,
+    VersionArgumentNeededError,
+)
 
 
 class BoostUnionTestEnvCLI:
@@ -15,39 +19,45 @@ class BoostUnionTestEnvCLI:
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
-    def init(self, name: str, gitreftype: str, gitrefname: str | int) -> None:
+    def init(
+        self, infrastructure_name: str, gitreftype: str, gitrefname: str | int
+    ) -> None:
         try:
             if not any([t in gitreftype for t in GitReferenceType]):
                 raise fire.core.FireError(
                     "The 2nd argument needs to be either commit, branch or pr"
                 )
             git_ref = GitReference(gitrefname, GitReferenceType(gitreftype))
-            self.core.initialize_infrastructure(name, git_ref)
+            self.core.initialize_infrastructure(infrastructure_name, git_ref)
         except NameAlreadyTakenError as e:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
             ) from e
 
-    def build(self, *versions: str) -> None:
+    def build(self, infrastructure_name: str, *versions: str) -> None:
         try:
-            self.core.build_infrastructure(*versions)
+            self.core.build_infrastructure(infrastructure_name, *versions)
         except VersionArgumentNeededError as e:
             raise fire.core.FireError("Please pass atleast one version") from e
+        except InfrastructureDoesNotExistYetError as e:
+            raise fire.core.FireError(
+                "The infrastructure you have given does not exist, please check the spelling"
+            ) from e
 
-    def start(self, *versions: str) -> None:
-        self.core.start_environment(*versions)
+    def start(self, infrastructure_name: str, *versions: str) -> None:
+        self.core.start_environment(infrastructure_name, *versions)
 
-    def restart(self, *versions: str) -> None:
-        self.core.restart_environment(*versions)
+    def restart(self, infrastructure_name: str, *versions: str) -> None:
+        self.core.restart_environment(infrastructure_name, *versions)
 
-    def stop(self, *versions: str) -> None:
-        self.core.stop_environment(*versions)
+    def stop(self, infrastructure_name: str, *versions: str) -> None:
+        self.core.stop_environment(infrastructure_name, *versions)
 
-    def destroy(self, *versions: str) -> None:
-        self.core.destroy_environment(*versions)
+    def destroy(self, infrastructure_name: str, *versions: str) -> None:
+        self.core.destroy_environment(infrastructure_name, *versions)
 
-    def teardown(self, name: str) -> None:
-        self.core.teardown_infrastructure(name)
+    def teardown(self, infrastructure_name: str) -> None:
+        self.core.teardown_infrastructure(infrastructure_name)
 
     def help(self) -> None:
         print("theme_boost_union_test_envs")

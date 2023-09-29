@@ -25,3 +25,9 @@ class InvalidGitReferenceError(BoostUnionTestEnvValueError):
 class UserInterfaceNotYetImplemented(BoostUnionTestEnvValueError):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+# if user tries to use commands on an infrastructure that has not yet been initialized
+class InfrastructureDoesNotExistYetError(BoostUnionTestEnvValueError):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

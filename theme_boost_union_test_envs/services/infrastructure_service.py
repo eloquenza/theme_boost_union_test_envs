@@ -28,32 +28,38 @@ class TestInfrastructureService:
         log().info("done init - find your test infrastructure here:")
         log().info(f"\tpath: {config().working_dir / name}")
 
-    def build(self, *versions: str) -> None:
+    def build(self, infrastructure: Path, *versions: str) -> None:
         if not versions:
-            raise VersionArgumentNeededError
-        infra_path = config().working_dir
-        # check the existing infrastructure if the selected moodle versions are already present
-        new_versions = self._check_existing_infrastructure(infra_path, *versions)
-        if not new_versions:
-            log().info(
-                "not building new envs - test envs already presented for selected moodle versions"
-            )
-            return
+            raise VersionArgumentNeededError()
+        moodles = infrastructure / "moodles"
+        if not moodles.exists():
+            moodles.mkdir()
+            new_versions = [*versions]
+        else:
+            # check the existing infrastructure if the selected moodle versions are already present
+            new_versions = self._check_existing_infrastructure(moodles, *versions)
+            if not new_versions:
+                log().info(
+                    "not building new envs - test envs already presented for selected moodle versions"
+                )
+                return
         # create a new test environment for the remaining moodle versions
         log().info("building envs for the following versions:")
         for ver in new_versions:
             log().info(f"* {ver}")
-        # TODO: mkdir moodles; don't throw error if it already exists
         for ver in new_versions:
             log().info(f"{20*'-'} {ver} {20*'-'}")
             log().info("creating test env")
-            vers_path = infra_path / ver
+            vers_path = moodles / ver
+            moodle_source_path = vers_path / "moodle"
             vers_path.mkdir(exist_ok=True)
             # unpacking the archive will created a folder called "moodle-{ver}"
             # rename the folder afterwards to ensure moodle sources are at the
             # same location in every created test infrastructure
             shutil.unpack_archive(self.moodle_cache.get(ver), vers_path)
-            shutil.move(vers_path / f"moodle-{ver}", vers_path / "moodle")
+            extracted_path = vers_path / f"moodle-{ver}"
+            shutil.move(extracted_path, moodle_source_path)
+            log().info(f"extracted moodle {ver} to {moodle_source_path}")
             # TODO: pull moodle-docker into it
             # TODO: replace all the params from moodle-docker with the correct ones:
             # TODO: * adjust the mounts in the docker-compose:
@@ -67,7 +73,7 @@ class TestInfrastructureService:
             # TODO: * MOODLE_VER
             # TODO: * MOODLE_DOCKER_PHP_VERSION
             log().info(f"test env for {ver} done")
-            # moodles are cooked al-dente; enjoy
+        log().info("your moodles are cooked al-dente; enjoy")
 
     def _check_existing_infrastructure(self, path: Path, *versions: str) -> list[str]:
         # return list of moodle versions without a existing test environment
@@ -78,8 +84,8 @@ class TestInfrastructureService:
                 bisect.insort(new_versions, ver)
         return new_versions
 
-    def teardown(self, name: str) -> None:
-        log().info(f"teardown test bed of {name}")
+    def teardown(self, infrastructure_name: str) -> None:
+        log().info(f"teardown test bed of {infrastructure_name}")
         # TODO: then remove file from nginx; to make sure the moodles cannot be served anymore
         # TODO: then call path rm to delete the folders
         # TODO: then delete the whole folder

@@ -1,4 +1,6 @@
+from .cross_cutting import config, log
 from .domain.git import GitReference
+from .exceptions import InfrastructureDoesNotExistYetError
 from .services import TestContainerService, TestInfrastructureService
 
 
@@ -11,25 +13,30 @@ class BoostUnionTestEnvCore:
         self.containerService = containerService
         self.infraService = infraService
 
-    def initialize_infrastructure(self, name: str, git_ref: GitReference) -> None:
-        self.infraService.initialize(name, git_ref)
+    def initialize_infrastructure(
+        self, infrastructure_name: str, git_ref: GitReference
+    ) -> None:
+        self.infraService.initialize(infrastructure_name, git_ref)
 
-    def build_infrastructure(self, *versions: str) -> None:
-        self.infraService.build(*versions)
+    def build_infrastructure(self, infrastructure_name: str, *versions: str) -> None:
+        path = config().working_dir / infrastructure_name
+        if not path.exists():
+            raise InfrastructureDoesNotExistYetError()
+        self.infraService.build(path, *versions)
 
-    def teardown_infrastructure(self, name: str) -> None:
+    def teardown_infrastructure(self, infrastructure_name: str) -> None:
         # TODO: check if container are running, stop them first
         # TODO: then call docker remove to delete the images
-        self.infraService.teardown(name)
+        self.infraService.teardown(infrastructure_name)
 
-    def start_environment(self, *versions: str) -> None:
-        self.containerService.start(*versions)
+    def start_environment(self, infrastructure_name: str, *versions: str) -> None:
+        self.containerService.start(infrastructure_name, *versions)
 
-    def stop_environment(self, *versions: str) -> None:
-        self.containerService.stop(*versions)
+    def stop_environment(self, infrastructure_name: str, *versions: str) -> None:
+        self.containerService.stop(infrastructure_name, *versions)
 
-    def restart_environment(self, *versions: str) -> None:
-        self.containerService.restart(*versions)
+    def restart_environment(self, infrastructure_name: str, *versions: str) -> None:
+        self.containerService.restart(infrastructure_name, *versions)
 
-    def destroy_environment(self, *versions: str) -> None:
-        self.containerService.destroy(*versions)
+    def destroy_environment(self, infrastructure_name: str, *versions: str) -> None:
+        self.containerService.destroy(infrastructure_name, *versions)
