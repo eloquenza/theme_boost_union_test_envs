@@ -106,11 +106,6 @@ class BoostUnionTestEnvCLI:
         """
         self.core.teardown_infrastructure(infrastructure_name)
 
-    def help(self) -> None:
-        print("theme_boost_union_test_envs")
-        print("=" * len("theme_boost_union_test_envs"))
-        print('Test environments for the Moodle theme "Boost Union"')
-
 
 def configure_cli_logger() -> None:
     config: dict[str, Any] = {
@@ -132,7 +127,6 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
     cli = BoostUnionTestEnvCLI(core)
     fire.Fire(
         {
-            "help": cli.help,
             "init": cli.init,
             "build": cli.build,
             "start": cli.start,
