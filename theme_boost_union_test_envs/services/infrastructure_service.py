@@ -1,13 +1,12 @@
+import bisect
 import shutil
 from pathlib import Path
 
-from loguru import logger
-
 from ..adapters import GitAdapter
+from ..cross_cutting import config, log
 from ..domain import MoodleCache
-from ..exceptions import NameAlreadyTakenError, VersionArgumentNeededError
-from ..utils.config import get_config
-from ..utils.dataclasses import GitReference
+from ..domain.git import GitReference
+from ..exceptions import VersionArgumentNeededError
 
 
 class TestInfrastructureService:
@@ -24,49 +23,63 @@ class TestInfrastructureService:
         name: str,
         git_ref: GitReference,
     ) -> None:
-        logger.info(f"initializing new test infrastructure named '{name}'")
+        log().info(f"initializing new test infrastructure named '{name}'")
         self.git.clone_repo(name, git_ref)
-        logger.info("done init - find your test infrastructure here:")
-        logger.info(f"\tpath: {get_config().working_dir / name}")
+        log().info("done init - find your test infrastructure here:")
+        log().info(f"\tpath: {config().working_dir / name}")
 
     def build(self, *versions: str) -> None:
         if not versions:
             raise VersionArgumentNeededError
-        logger.info("build envs for the following versions:")
-        # mkdir moodles; don't throw error if it already exists
-        infra_path = get_config().working_dir
-        logger.info("creating infra path")
-        infra_path.mkdir(exist_ok=True)
-        for ver in versions:
-            # check if ver already exists; continue then
+        infra_path = config().working_dir
+        # check the existing infrastructure if the selected moodle versions are already present
+        new_versions = self._check_existing_infrastructure(infra_path, *versions)
+        if not new_versions:
+            log().info(
+                "not building new envs - test envs already presented for selected moodle versions"
+            )
+            return
+        # create a new test environment for the remaining moodle versions
+        log().info("building envs for the following versions:")
+        for ver in new_versions:
+            log().info(f"* {ver}")
+        # TODO: mkdir moodles; don't throw error if it already exists
+        for ver in new_versions:
+            log().info(f"{20*'-'} {ver} {20*'-'}")
+            log().info("creating test env")
             vers_path = infra_path / ver
-            if vers_path.exists():
-                logger.info(f"test env for {ver} already exists")
-                continue
-            logger.info(f"{ver} moodle test env does not exist yet")
-            logger.info("creating test env")
             vers_path.mkdir(exist_ok=True)
             # unpacking the archive will created a folder called "moodle-{ver}"
             # rename the folder afterwards to ensure moodle sources are at the
             # same location in every created test infrastructure
             shutil.unpack_archive(self.moodle_cache.get(ver), vers_path)
             shutil.move(vers_path / f"moodle-{ver}", vers_path / "moodle")
-            # pull moodle-docker into it
-            # replace all the params from moodle-docker with the correct ones:
-            # * adjust the mounts in the docker-compose:
-            #     * add theme mount
-            #     * add moodle sources mount
-            # * COMPOSE_NAME: given by init / folder_name
-            # * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
-            # * NGINX_SERVER_NAME: see COMPOSE_NAME
-            # * absolute path for Moodle source
-            # * absolute path for "Boost Union" theme
-            # * MOODLE_VER
-            # * MOODLE_DOCKER_PHP_VERSION
+            # TODO: pull moodle-docker into it
+            # TODO: replace all the params from moodle-docker with the correct ones:
+            # TODO: * adjust the mounts in the docker-compose:
+            # TODO:     * add theme mount
+            # TODO:     * add moodle sources mount
+            # TODO: * COMPOSE_NAME: given by init / folder_name
+            # TODO: * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
+            # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME
+            # TODO: * absolute path for Moodle source
+            # TODO: * absolute path for "Boost Union" theme
+            # TODO: * MOODLE_VER
+            # TODO: * MOODLE_DOCKER_PHP_VERSION
+            log().info(f"test env for {ver} done")
             # moodles are cooked al-dente; enjoy
 
+    def _check_existing_infrastructure(self, path: Path, *versions: str) -> list[str]:
+        # return list of moodle versions without a existing test environment
+        new_versions: list[str] = []
+        for ver in versions:
+            vers_path = path / ver
+            if not vers_path.exists():
+                bisect.insort(new_versions, ver)
+        return new_versions
+
     def teardown(self, name: str) -> None:
-        logger.info(f"teardown test bed of {name}")
-        # then remove file from nginx; to make sure the moodles cannot be served anymore
-        # then call path rm to delete the folders
-        # then delete the whole folder
+        log().info(f"teardown test bed of {name}")
+        # TODO: then remove file from nginx; to make sure the moodles cannot be served anymore
+        # TODO: then call path rm to delete the folders
+        # TODO: then delete the whole folder

@@ -1,17 +1,16 @@
 from pathlib import Path
 
 from git import Repo
-from loguru import logger
 
+from ..cross_cutting import config, log
+from ..domain.git import GitReference, GitReferenceType
 from ..exceptions import NameAlreadyTakenError
-from ..utils.config import get_config
-from ..utils.dataclasses import GitReference, GitReferenceType
 
 
 class GitAdapter:
     def __init__(self, repo_url: str) -> None:
         self.repo_url = repo_url
-        self.working_dir = get_config().working_dir
+        self.working_dir = config().working_dir
 
     def __clone_repo(self, repo_dir: Path, **clone_args) -> Repo:  # type: ignore
         from ..ui.cli import GitRemoteProgress
@@ -25,7 +24,7 @@ class GitAdapter:
         if repo_dir.exists():
             raise NameAlreadyTakenError("Repo already exists")
         else:
-            logger.info("cloning repository...")
+            log().info("cloning repository...")
             # In case we want to check out a branch, let's check it out directly
             # Saves us a bit of traffic.
             if git_ref.type == GitReferenceType.BRANCH:
@@ -33,7 +32,6 @@ class GitAdapter:
             # In any other case, we just want to clone the repo with the default main branch
             else:
                 repo = self.__clone_repo(repo_dir)
-
             # Because you cannot clone a commit via sha directly, we need to check out seperately
             if git_ref.type == GitReferenceType.COMMIT:
                 repo.git.checkout(git_ref.ref)
@@ -50,6 +48,4 @@ class GitAdapter:
                 repo.create_head(
                     branch_name, origin.refs[branch_name]
                 ).set_tracking_branch(origin.refs[branch_name]).checkout()
-
-            # checked out reference is pushed into another var to avoid handling a TypeError in case we wanna check out a commit directly because GitPython complains about the HEAD being in a detached state then.
-            logger.info(f"done cloning, checked out: {git_ref}")
+            log().info(f"done cloning, checked out: {git_ref}")

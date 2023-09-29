@@ -2,11 +2,11 @@ import sys
 from typing import Any
 
 import fire
-from loguru import logger
 
 from ...core import BoostUnionTestEnvCore
+from ...cross_cutting import log
+from ...domain.git import GitReference, GitReferenceType
 from ...exceptions import NameAlreadyTakenError, VersionArgumentNeededError
-from ...utils.dataclasses import GitReference, GitReferenceType
 
 
 class BoostUnionTestEnvCLI:
@@ -23,6 +23,10 @@ class BoostUnionTestEnvCLI:
         pr: int | None = None,
     ) -> None:
         try:
+            if not commit and not branch and not pr:
+                raise fire.core.FireError(
+                    "This command requires to be passed either a commit, a branch name or a PR number"
+                )
             if commit:
                 git_ref = GitReference(commit, GitReferenceType.COMMIT)
             elif branch:
@@ -35,22 +39,22 @@ class BoostUnionTestEnvCLI:
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
             ) from e
 
-    def build(self, *versions: list[str]) -> None:
+    def build(self, *versions: str) -> None:
         try:
             self.core.build_infrastructure(*versions)
         except VersionArgumentNeededError as e:
             raise fire.core.FireError("Please pass atleast one version") from e
 
-    def start(self, *versions: list[str]) -> None:
+    def start(self, *versions: str) -> None:
         self.core.start_environment(*versions)
 
-    def restart(self, *versions: list[str]) -> None:
+    def restart(self, *versions: str) -> None:
         self.core.restart_environment(*versions)
 
-    def stop(self, *versions: list[str]) -> None:
+    def stop(self, *versions: str) -> None:
         self.core.stop_environment(*versions)
 
-    def destroy(self, *versions: list[str]) -> None:
+    def destroy(self, *versions: str) -> None:
         self.core.destroy_environment(*versions)
 
     def teardown(self, name: str) -> None:
@@ -74,7 +78,7 @@ def configure_cli_logger() -> None:
             },
         ],
     }
-    logger.configure(**config)
+    log().configure(**config)
 
 
 def cli_main(core: BoostUnionTestEnvCore) -> None:
@@ -90,5 +94,5 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
             "stop": cli.stop,
             "destroy": cli.destroy,
             "teardown": cli.teardown,
-        }
+        },
     )
