@@ -26,9 +26,11 @@ class MoodleDownloader:
         for retry in range(self.retries):
             try:
                 dl_link_for_vers = self.url + file_name
+                log().info(
+                    f"downloading from {dl_link_for_vers} - try {retry+1} from {self.retries}"
+                )
                 resp = requests.get(dl_link_for_vers, allow_redirects=True)
                 resp.raise_for_status()
-                log().info(f"downloading from {dl_link_for_vers}")
                 with destination.open(mode="wb") as file:
                     file.write(resp.content)
                 log().info(f"download done, saved to cache: {destination}")
@@ -56,6 +58,7 @@ class MoodleCache:
         archive_path = self.cache_dir / moodle_tar_name
         # if the selected moodle version isn't on disk, we need to download it
         if not archive_path.exists():
+            log().info(f"cache miss - trying to download moodle {version}")
             try:
                 self.downloader.download(moodle_tar_name, archive_path)
             except HTTPError as e:
@@ -64,7 +67,7 @@ class MoodleCache:
         # else, just return the path to the source of the selected moodle
         # version, as we have the file on disk; effectively hitting our 'cache'
         else:
-            log().info(f"getting moodle {version} from cache")
+            log().info(f"cache hit - getting moodle {version} from disk")
         return archive_path
 
 
