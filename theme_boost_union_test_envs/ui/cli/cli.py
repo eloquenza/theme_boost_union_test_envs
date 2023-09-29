@@ -14,7 +14,9 @@ from ...exceptions import (
 
 
 class BoostUnionTestEnvCLI:
-    """BoostUnionTestEnvCLI capsulates all possible commands to provide a CLI. While it is not needed to be in a single class, we still want to do so, even it's just for making sure we are not shadowing python built-ins (see help)."""
+    """BoostUnionTestEnvCLI capsulates all possible commands to provide a CLI.While it is not needed to be in a single class, we still want to do so, even
+    it's just for making sure we are not shadowing python built-ins (see help).
+    """
 
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
@@ -22,6 +24,17 @@ class BoostUnionTestEnvCLI:
     def init(
         self, infrastructure_name: str, git_ref_type: str, git_ref_name: str | int
     ) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+            git_ref_type (str): _description_
+            git_ref_name (str | int): _description_
+
+        Raises:
+            fire.core.FireError: _description_
+            fire.core.FireError: _description_
+        """
         try:
             if not any([t in git_ref_type for t in GitReferenceType]):
                 raise fire.core.FireError(
@@ -35,6 +48,15 @@ class BoostUnionTestEnvCLI:
             ) from e
 
     def build(self, infrastructure_name: str, *versions: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+
+        Raises:
+            fire.core.FireError: _description_
+            fire.core.FireError: _description_
+        """
         try:
             self.core.build_infrastructure(infrastructure_name, *versions)
         except VersionArgumentNeededError as e:
@@ -45,18 +67,43 @@ class BoostUnionTestEnvCLI:
             ) from e
 
     def start(self, infrastructure_name: str, *versions: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+        """
         self.core.start_environment(infrastructure_name, *versions)
 
     def restart(self, infrastructure_name: str, *versions: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+        """
         self.core.restart_environment(infrastructure_name, *versions)
 
     def stop(self, infrastructure_name: str, *versions: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+        """
         self.core.stop_environment(infrastructure_name, *versions)
 
     def destroy(self, infrastructure_name: str, *versions: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+        """
         self.core.destroy_environment(infrastructure_name, *versions)
 
     def teardown(self, infrastructure_name: str) -> None:
+        """_summary_
+
+        Args:
+            infrastructure_name (str): _description_
+        """
         self.core.teardown_infrastructure(infrastructure_name)
 
     def help(self) -> None:
