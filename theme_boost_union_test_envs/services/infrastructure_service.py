@@ -5,6 +5,7 @@ from loguru import logger
 
 from ..adapters import GitAdapter
 from ..domain import MoodleCache
+from ..exceptions import NameAlreadyTakenError, VersionArgumentNeededError
 from ..utils.config import get_config
 from ..utils.dataclasses import GitReference
 
@@ -24,17 +25,13 @@ class TestInfrastructureService:
         git_ref: GitReference,
     ) -> None:
         logger.info(f"initializing new test infrastructure named '{name}'")
-        try:
-            self.git.clone_repo(name, git_ref)
-            logger.info("done init - find your test infrastructure here:")
-            logger.info(f"\tpath: {get_config().working_dir / name}")
-        except ValueError as e:
-            logger.error(f"{e}")
-            raise e
+        self.git.clone_repo(name, git_ref)
+        logger.info("done init - find your test infrastructure here:")
+        logger.info(f"\tpath: {get_config().working_dir / name}")
 
     def build(self, *versions: str) -> None:
         if not versions:
-            raise ValueError
+            raise VersionArgumentNeededError
         logger.info("build envs for the following versions:")
         # mkdir moodles; don't throw error if it already exists
         infra_path = get_config().working_dir

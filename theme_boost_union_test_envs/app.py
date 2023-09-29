@@ -31,4 +31,7 @@ def spawn_interface(
     elif interface_choice == UserInterface.GUI:
         gui_main(core)
     else:
-        raise ValueError("Please provide a valid interface argument")
+        valid_interfaces = [f"UserInterface.{e.value.upper()}" for e in UserInterface]
+        raise ValueError(
+            f"Please provide a valid ({valid_interfaces}) interface argument"
+        )

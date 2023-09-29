@@ -3,6 +3,7 @@ from pathlib import Path
 from git import Repo
 from loguru import logger
 
+from ..exceptions import NameAlreadyTakenError
 from ..utils.config import get_config
 from ..utils.dataclasses import GitReference, GitReferenceType
 
@@ -22,7 +23,7 @@ class GitAdapter:
     def clone_repo(self, name: str, git_ref: GitReference) -> None:
         repo_dir = self.working_dir / name / "theme"
         if repo_dir.exists():
-            raise ValueError("Repo already exists")
+            raise NameAlreadyTakenError("Repo already exists")
         else:
             logger.info("cloning repository...")
             # In case we want to check out a branch, let's check it out directly

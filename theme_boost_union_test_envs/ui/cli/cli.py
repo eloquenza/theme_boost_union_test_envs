@@ -5,6 +5,7 @@ import fire
 from loguru import logger
 
 from ...core import BoostUnionTestEnvCore
+from ...exceptions import NameAlreadyTakenError, VersionArgumentNeededError
 from ...utils.dataclasses import GitReference, GitReferenceType
 
 
@@ -29,7 +30,7 @@ class BoostUnionTestEnvCLI:
             elif pr:
                 git_ref = GitReference(pr, GitReferenceType.PULL_REQUEST)
             self.core.initialize_infrastructure(name, git_ref)
-        except ValueError as e:
+        except NameAlreadyTakenError as e:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
             ) from e
@@ -37,7 +38,7 @@ class BoostUnionTestEnvCLI:
     def build(self, *versions: list[str]) -> None:
         try:
             self.core.build_infrastructure(*versions)
-        except ValueError as e:
+        except VersionArgumentNeededError as e:
             raise fire.core.FireError("Please pass atleast one version") from e
 
     def start(self, *versions: list[str]) -> None:
