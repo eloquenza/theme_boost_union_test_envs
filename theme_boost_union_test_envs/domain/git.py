@@ -9,7 +9,7 @@ PullRequest = int
 class GitReferenceType(str, Enum):
     BRANCH = "branch"
     COMMIT = "commit"
-    PULL_REQUEST = "pull_request"
+    PULL_REQUEST = "pr"
 
 
 @dataclass

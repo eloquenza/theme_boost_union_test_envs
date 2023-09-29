@@ -15,24 +15,13 @@ class BoostUnionTestEnvCLI:
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
-    def init(
-        self,
-        name: str,
-        commit: str | None = None,
-        branch: str | None = None,
-        pr: int | None = None,
-    ) -> None:
+    def init(self, name: str, gitreftype: str, gitrefname: str | int) -> None:
         try:
-            if not commit and not branch and not pr:
+            if not any([t in gitreftype for t in GitReferenceType]):
                 raise fire.core.FireError(
-                    "This command requires to be passed either a commit, a branch name or a PR number"
+                    "The 2nd argument needs to be either commit, branch or pr"
                 )
-            if commit:
-                git_ref = GitReference(commit, GitReferenceType.COMMIT)
-            elif branch:
-                git_ref = GitReference(branch, GitReferenceType.BRANCH)
-            elif pr:
-                git_ref = GitReference(pr, GitReferenceType.PULL_REQUEST)
+            git_ref = GitReference(gitrefname, GitReferenceType(gitreftype))
             self.core.initialize_infrastructure(name, git_ref)
         except NameAlreadyTakenError as e:
             raise fire.core.FireError(
