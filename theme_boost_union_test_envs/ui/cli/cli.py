@@ -20,14 +20,14 @@ class BoostUnionTestEnvCLI:
         self.core = core
 
     def init(
-        self, infrastructure_name: str, gitreftype: str, gitrefname: str | int
+        self, infrastructure_name: str, git_ref_type: str, git_ref_name: str | int
     ) -> None:
         try:
-            if not any([t in gitreftype for t in GitReferenceType]):
+            if not any([t in git_ref_type for t in GitReferenceType]):
                 raise fire.core.FireError(
                     "The 2nd argument needs to be either commit, branch or pr"
                 )
-            git_ref = GitReference(gitrefname, GitReferenceType(gitreftype))
+            git_ref = GitReference(git_ref_name, GitReferenceType(git_ref_type))
             self.core.initialize_infrastructure(infrastructure_name, git_ref)
         except NameAlreadyTakenError as e:
             raise fire.core.FireError(

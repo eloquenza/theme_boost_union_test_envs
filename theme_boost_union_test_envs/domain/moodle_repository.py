@@ -16,7 +16,7 @@ class MoodleCache:
 
     def get(self, version: str) -> Path:
         moodle_tar_name = _generate_file_name(version)
-        archive_path: Path = self.cache_dir / moodle_tar_name
+        archive_path = self.cache_dir / moodle_tar_name
         # if the selected moodle version isn't on disk, we need to download it
         if not archive_path.exists():
             self.__download(moodle_tar_name, archive_path)
