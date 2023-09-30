@@ -32,7 +32,7 @@ class GitAdapter:
             # In any other case, we just want to clone the repo with the default main branch
             else:
                 repo = self.__clone_repo(repo_dir)
-            # Because you cannot clone a commit via sha directly, we need to check out seperately
+            # Because you cannot clone a repo via commit sha directly, we need to check out seperately
             if git_ref.type == GitReferenceType.COMMIT:
                 repo.git.checkout(git_ref.ref)
             # PRs are a bit more tricky as they are not a default Git feature, and GitHub and GitLab handle them a bit differently.
