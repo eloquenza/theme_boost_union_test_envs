@@ -4,6 +4,7 @@ from .domain import (
     GitRepository,
     MoodleCache,
     Testbed,
+    TestContainer,
     TestInfrastructure,
 )
 from .exceptions import InfrastructureDoesNotExistYetError, NameAlreadyTakenError
@@ -54,7 +55,8 @@ class BoostUnionTestEnvCore:
         existing_infra.teardown(infrastructure_name)
 
     def start_environment(self, infrastructure_name: str, *versions: str) -> None:
-        pass
+        container = TestContainer()
+        container.start()
 
     def stop_environment(self, infrastructure_name: str, *versions: str) -> None:
         pass

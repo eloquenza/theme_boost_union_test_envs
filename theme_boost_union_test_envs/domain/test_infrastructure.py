@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from ..cross_cutting import config, log
+from ..cross_cutting import config, log, template_engine
 from ..domain import MoodleCache
 from ..domain.git import GitReference, GitRepository
 from ..exceptions import VersionArgumentNeededError
@@ -17,6 +17,7 @@ class TestInfrastructure:
         self.directory = directory
         self.boost_union_repo = boost_union_repo
         self.moodle_cache = moodle_cache
+        self.template_engine = template_engine()
 
     def setup(
         self,
@@ -62,15 +63,22 @@ class TestInfrastructure:
             # dirs_exist_ok needed so function doesn't raise FileExistsError
             shutil.copytree(docker_dir, version_path, dirs_exist_ok=True)
             log().info(f"copied docker files to {version_path}")
+            log().info(
+                "create environment file with needed vars for our docker containers"
+            )
+            shutil.copy(
+                version_path / "config.docker-template.php",
+                moodle_source_path / "config.php",
+            )
+            self.template_engine.docker_customisation(
+                version_path, self.directory / "theme" / "boost_union"
+            )
+            self.template_engine.environment_file(
+                version_path, self.directory.name, version_nr
+            )
             # TODO: replace all the params from moodle-docker with the correct ones:
-            # TODO: * adjust the mounts in the docker-compose:
-            # TODO:     * add theme mount
-            # TODO:     * add moodle sources mount
-            # TODO: * COMPOSE_NAME: given by init / folder_name
             # TODO: * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
             # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME
-            # TODO: * absolute path for Moodle source
-            # TODO: * absolute path for "Boost Union" theme
             # TODO: * MOODLE_VER
             # TODO: * MOODLE_DOCKER_PHP_VERSION
             log().info(f"test env for {version_nr} done")
@@ -86,7 +94,7 @@ class TestInfrastructure:
         return sources_to_versions
 
     def teardown(self, infrastructure_name: str) -> None:
-        log().info(f"teardown test bed of {infrastructure_name}")
+        log().info(f"starting teardown of test infrastructure {infrastructure_name}")
         # TODO: then remove file from nginx; to make sure the moodles cannot be served anymore
         # TODO: then call path rm to delete the folders
         # TODO: then delete the whole folder
