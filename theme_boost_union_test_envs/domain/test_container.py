@@ -1,7 +1,7 @@
 from ..cross_cutting import log
 
 
-class TestContainerService:
+class TestContainer:
     def __init__(self) -> None:
         pass
 

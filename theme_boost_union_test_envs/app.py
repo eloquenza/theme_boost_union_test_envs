@@ -3,11 +3,16 @@ from enum import Enum
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 
-from .adapters import GitAdapter
 from .core import BoostUnionTestEnvCore
 from .cross_cutting import ApplicationConfigManager, ApplicationLogger
-from .domain import MoodleCache, MoodleDownloader
-from .services import TestContainerService, TestInfrastructureService
+from .domain import (
+    GitRepository,
+    MoodleCache,
+    MoodleDownloader,
+    Testbed,
+    TestContainer,
+    TestInfrastructure,
+)
 from .ui import cli_main, gui_main
 
 
@@ -15,12 +20,7 @@ class Adapters(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
-    git = providers.Factory(
-        GitAdapter,
-        repo_url=config.git.boost_union_repo_url,
-    )
-
-    moodle_downloader = providers.Factory(
+    moodle_downloader = providers.Singleton(
         MoodleDownloader,
         url=config.moodle.downloader.url,
         retries=config.moodle.downloader.retries,
@@ -34,26 +34,22 @@ class Domain(containers.DeclarativeContainer):
 
     adapters = providers.DependenciesContainer()
 
-    moodle_cache = providers.Factory(
+    moodle_cache = providers.Singleton(
         MoodleCache,
-        cache_dir=config.moodle.cache.dir,
+        cache_dir=config.core.moodle.cache.dir,
         downloader=adapters.moodle_downloader,
     )
 
-
-class Services(containers.DeclarativeContainer):
-
-    adapters = providers.DependenciesContainer()
-    domain = providers.DependenciesContainer()
-
-    infrastructure = providers.Factory(
-        TestInfrastructureService,
-        git=adapters.git,
-        moodle_cache=domain.moodle_cache,
+    moodle_docker_repo = providers.Factory(
+        GitRepository,
+        repo_url=config.repos.moodle_docker.url,
+        local_dir=config.repos.moodle_docker.dir,
     )
 
-    test_container = providers.Factory(
-        TestContainerService,
+    boost_union_repo = providers.Factory(
+        GitRepository,
+        repo_url=config.repos.boost_union.url,
+        local_dir=config.repos.boost_union.dir,
     )
 
 
@@ -83,19 +79,14 @@ class Application(containers.DeclarativeContainer):
     domain = providers.Container(
         Domain,
         adapters=adapters,
-        config=config.core,
-    )
-
-    services = providers.Container(
-        Services,
-        adapters=adapters,
-        domain=domain,
+        config=config,
     )
 
     core = providers.Singleton(
         BoostUnionTestEnvCore,
-        container_service=services.test_container,
-        infrastructure_service=services.infrastructure,
+        moodle_docker_repo=domain.moodle_docker_repo,
+        boost_union_repo=domain.boost_union_repo,
+        moodle_cache=domain.moodle_cache,
     )
 
 

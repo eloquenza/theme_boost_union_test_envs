@@ -22,7 +22,10 @@ class BoostUnionTestEnvCLI:
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
-    def init(
+    def init(self) -> None:
+        self.core.init_testbed()
+
+    def setup(
         self, infrastructure_name: str, git_ref_type: str, git_ref_name: str | int
     ) -> None:
         """_summary_
@@ -42,7 +45,7 @@ class BoostUnionTestEnvCLI:
                     "The 2nd argument needs to be either commit, branch or pr"
                 )
             git_ref = GitReference(git_ref_name, GitReferenceType(git_ref_type))
-            self.core.initialize_infrastructure(infrastructure_name, git_ref)
+            self.core.setup_infrastructure(infrastructure_name, git_ref)
         except NameAlreadyTakenError as e:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
@@ -133,6 +136,7 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
     fire.Fire(
         {
             "init": cli.init,
+            "setup": cli.setup,
             "build": cli.build,
             "start": cli.start,
             "restart": cli.restart,

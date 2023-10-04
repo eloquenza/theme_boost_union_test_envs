@@ -4,9 +4,16 @@ core:
     cache:
       # relative to core.working_dir
       dir: ".moodles/"
+repos:
+  boost_union:
+    url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+    # don't edit; relative to the test infrastructure dir
+    dir: "./theme/boost_union"
+  moodle_docker:
+    url: "https://github.com/moodlehq/moodle-docker"
+    # don't edit; relative to the core.working_dir
+    dir: "./moodle-docker"
 adapters:
-  git:
-    boost_union_repo_url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
   moodle:
     downloader:
       url: "https://github.com/moodle/moodle/archive/refs/tags/"

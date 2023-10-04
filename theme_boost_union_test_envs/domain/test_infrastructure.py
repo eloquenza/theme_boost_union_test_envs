@@ -1,37 +1,36 @@
-import bisect
 import shutil
 from pathlib import Path
 
-from ..adapters import GitAdapter
 from ..cross_cutting import config, log
 from ..domain import MoodleCache
-from ..domain.git import GitReference
+from ..domain.git import GitReference, GitRepository
 from ..exceptions import VersionArgumentNeededError
 
 
-class TestInfrastructureService:
+class TestInfrastructure:
     def __init__(
         self,
-        git: GitAdapter,
+        directory: Path,
+        boost_union_repo: GitRepository,
         moodle_cache: MoodleCache,
     ) -> None:
-        self.git = git
+        self.directory = directory
+        self.boost_union_repo = boost_union_repo
         self.moodle_cache = moodle_cache
 
-    def initialize(
+    def setup(
         self,
-        name: str,
         git_ref: GitReference,
     ) -> None:
-        log().info(f"initializing new test infrastructure named '{name}'")
-        self.git.clone_repo(name, git_ref)
+        log().info(f"initializing new test infrastructure named '{self.directory}'")
+        self.boost_union_repo.clone_repo(self.directory, git_ref)
         log().info("done init - find your test infrastructure here:")
-        log().info(f"\tpath: {config().working_dir / name}")
+        log().info(f"\tpath: {self.directory }")
 
-    def build(self, infrastructure: Path, *versions: str) -> None:
+    def build(self, *versions: str) -> None:
         if not versions:
             raise VersionArgumentNeededError()
-        moodles = infrastructure / "moodles"
+        moodles = self.directory / "moodles"
         if not moodles.exists():
             log().info("oh, no moodles yet. starting the stove...")
             moodles.mkdir()
@@ -46,6 +45,7 @@ class TestInfrastructureService:
         log().info("building envs for the following versions:")
         for version in new_versions:
             log().info(f"* {version}")
+        docker_dir = config().working_dir / "./moodle-docker"
         for version_nr, archive_path in new_versions.items():
             log().info(f"{20*'-'} {version_nr} {20*'-'}")
             log().info("creating test env")
@@ -59,7 +59,9 @@ class TestInfrastructureService:
             extracted_path = version_path / f"moodle-{version_nr}"
             shutil.move(extracted_path, moodle_source_path)
             log().info(f"extracted moodle {version} to {moodle_source_path}")
-            # TODO: pull moodle-docker into it
+            # dirs_exist_ok needed so function doesn't raise FileExistsError
+            shutil.copytree(docker_dir, version_path, dirs_exist_ok=True)
+            log().info(f"copied docker files to {version_path}")
             # TODO: replace all the params from moodle-docker with the correct ones:
             # TODO: * adjust the mounts in the docker-compose:
             # TODO:     * add theme mount

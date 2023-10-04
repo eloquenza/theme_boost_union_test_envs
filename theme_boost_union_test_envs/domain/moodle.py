@@ -48,14 +48,12 @@ class MoodleCache:
     def __init__(self, cache_dir: str, downloader: MoodleDownloader) -> None:
         # yaml doesn't allow string concatenation, so we are doing this here
         # make sure moodle cache folder is in app core pwd
-        self.cache_dir = config().working_dir / Path(cache_dir)
-        if not self.cache_dir.exists():
-            self.cache_dir.mkdir(parents=True)
+        self.directory = config().working_dir / Path(cache_dir)
         self.downloader = downloader
 
     def get(self, version: str) -> Path:
         moodle_tar_name = _generate_file_name(version)
-        archive_path = self.cache_dir / moodle_tar_name
+        archive_path = self.directory / moodle_tar_name
         # if the selected moodle version isn't on disk, we need to download it
         if not archive_path.exists():
             log().info(f"cache miss - trying to download moodle {version}")
