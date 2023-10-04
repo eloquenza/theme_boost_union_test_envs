@@ -1,12 +1,17 @@
+import docker  # type: ignore
+
 from ..cross_cutting import log
 
 
 class TestContainer:
     def __init__(self) -> None:
+        self.client = docker.from_env()
         pass
 
     def start(self, *versions: str) -> None:
         self.__helper("start", *versions)
+        log().info("starting a default container")
+        log().info("done starting container")
         # TODO: for each ver:
         # TODO:   call docker compose start
         # TODO:   check if services really started

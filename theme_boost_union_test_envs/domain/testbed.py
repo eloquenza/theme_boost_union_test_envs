@@ -1,6 +1,8 @@
+import os
+import shutil
 from pathlib import Path
 
-from ..cross_cutting import config, log
+from ..cross_cutting import config, log, template_engine
 from . import GitReference, GitReferenceType, GitRepository
 
 
@@ -24,5 +26,9 @@ class Testbed:
             self.docker_repo.clone_repo(
                 self.working_dir, GitReference("master", GitReferenceType.BRANCH)
             )
+            # copy template files into the cloned moodle docker repo to ensure
+            # every newly created environment has access to those without hassle
+            for file in template_engine().template_files:
+                shutil.copy(file, self.docker_repo.directory)
         else:
             log().info(f"test bed @ {self.working_dir} is already initialized")

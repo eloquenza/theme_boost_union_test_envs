@@ -1,0 +1,5 @@
+version: "2"
+services:
+  webserver:
+    volumes:
+      - "$REPLACE_BOOST_UNION_SOURCE_PATH:/var/www/html/theme/boost_union:cached"
