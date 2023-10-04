@@ -98,3 +98,8 @@ class TestInfrastructure:
         # TODO: then remove file from nginx; to make sure the moodles cannot be served anymore
         # TODO: then call path rm to delete the folders
         # TODO: then delete the whole folder
+        # pathlib functions require the dir to be empty, but we just can safely
+        # delete all files now
+        if self.directory.exists():
+            shutil.rmtree(self.directory)
+            log().info(f"removed test infrastructure {self.directory.name}")
