@@ -1,6 +1,10 @@
+import secrets
+import socket
+import string
+from contextlib import closing
 from pathlib import Path
 from string import Template
-from typing import cast
+from typing import Any, cast
 
 
 class TemplateEngine:
@@ -27,6 +31,8 @@ class TemplateEngine:
         substitutes = {
             "REPLACE_COMPOSE_NAME": f"{infrastructure_name+'-moodle-'+compose_safe_version}",
             "REPLACE_MOODLE_SOURCE_PATH": f"{template_path / 'moodle'}",
+            "REPLACE_PASSWORD": self._create_new_admin_pw(),
+            "REPLACE_MOODLE_WEB_PORT": self._find_free_port(),
         }
         template = Template(env_file.read_text())
         replaced_strings = template.substitute(substitutes)
@@ -34,6 +40,16 @@ class TemplateEngine:
 
     def _create_compose_safe_version_string(self, version: str) -> str:
         return version.replace(".", "_")
+
+    def _create_new_admin_pw(self) -> str:
+        alphabet = string.ascii_letters + string.digits
+        return "".join(secrets.choice(alphabet) for i in range(20))
+
+    def _find_free_port(self) -> Any:
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.bind(("", 0))
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            return s.getsockname()[1]
 
 
 def template_engine() -> TemplateEngine:
