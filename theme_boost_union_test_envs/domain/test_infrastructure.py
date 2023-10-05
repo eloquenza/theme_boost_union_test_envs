@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from ..cross_cutting import config, log, template_engine
-from ..domain import MoodleCache
+from ..domain import MoodleCache, TestContainer
 from ..domain.git import GitReference, GitRepository
 from ..exceptions import VersionArgumentNeededError
 
@@ -77,6 +77,8 @@ class TestInfrastructure:
             self.template_engine.environment_file(
                 moodle_version_path, self.directory.name, version_nr
             )
+            container = TestContainer(moodle_version_path)
+            container.create()
             # TODO: replace all the params from moodle-docker with the correct ones:
             # TODO: * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
             # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME

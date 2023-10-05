@@ -1,3 +1,5 @@
+from typing import Callable
+
 from .cross_cutting import config, log
 from .domain import (
     GitReference,
@@ -55,14 +57,56 @@ class BoostUnionTestEnvCore:
         existing_infra.teardown(infrastructure_name)
 
     def start_environment(self, infrastructure_name: str, *versions: str) -> None:
-        container = TestContainer()
-        container.start()
+        self._container_call_helper(
+            infrastructure_name,
+            TestContainer.start,
+            TestContainer.start.__name__,
+            *versions,
+        )
 
     def stop_environment(self, infrastructure_name: str, *versions: str) -> None:
-        pass
+        self._container_call_helper(
+            infrastructure_name,
+            TestContainer.stop,
+            TestContainer.stop.__name__,
+            *versions,
+        )
 
     def restart_environment(self, infrastructure_name: str, *versions: str) -> None:
-        pass
+        self._container_call_helper(
+            infrastructure_name,
+            TestContainer.restart,
+            TestContainer.restart.__name__,
+            *versions,
+        )
 
     def destroy_environment(self, infrastructure_name: str, *versions: str) -> None:
-        pass
+        self._container_call_helper(
+            infrastructure_name,
+            TestContainer.destroy,
+            TestContainer.destroy.__name__,
+            *versions,
+        )
+
+    def _container_call_helper(
+        self,
+        infrastructure_name: str,
+        function: Callable[[TestContainer], None],
+        action: str,
+        *versions: str,
+    ) -> None:
+        infrastructure_path = config().working_dir / infrastructure_name
+        if not infrastructure_path.exists():
+            raise InfrastructureDoesNotExistYetError()
+        log().info(f"{action} envs for the following versions:")
+        if not versions:
+            log().info(f"{action}ing all existing envs")
+            # TODO: return all available versions to start these
+        for ver in versions:
+            log().info(f"* {ver}")
+        for ver in versions:
+            # TODO: check if version actually exists
+            path = infrastructure_path / "moodles" / ver
+            log().info(f"{action}ing container for moodle {path.name}")
+            function(TestContainer(path))
+            log().info(f"done {action}ing container")
