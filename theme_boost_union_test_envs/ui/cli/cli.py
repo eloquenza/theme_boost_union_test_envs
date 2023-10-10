@@ -10,6 +10,7 @@ from ...exceptions import (
     InfrastructureDoesNotExistYetError,
     InvalidMoodleVersionError,
     NameAlreadyTakenError,
+    TestbedDoesNotExistYetError,
     VersionArgumentNeededError,
 )
 
@@ -19,6 +20,14 @@ class BoostUnionTestEnvCLI:
 
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
+
+    def list(self) -> None:
+        try:
+            self.core.list_infrastructures()
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No test infrastructure can be found as the test bed has not been initialized yet."
+            )
 
     def init(self) -> None:
         """The 'init' command initializes the working directory configured in the 'config.yml'. This entails cloning HEAD of moodle-docker into it, creating a ".moodles/" subdirectory which is used as a local cache to for already downloaded Moodle versions.
@@ -143,13 +152,14 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
             # testbed related commands
             "init": cli.init,
             # test environment related commands
+            "list": cli.list,
             "setup": cli.setup,
-            "build": cli.build,
             "teardown": cli.teardown,
             # moodle container related commands
-            "start": cli.start,
-            "restart": cli.restart,
-            "stop": cli.stop,
+            "build": cli.build,
             "destroy": cli.destroy,
+            "start": cli.start,
+            "stop": cli.stop,
+            "restart": cli.restart,
         },
     )

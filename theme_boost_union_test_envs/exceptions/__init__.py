@@ -4,6 +4,7 @@ from .exceptions import (
     InvalidGitReferenceError,
     InvalidMoodleVersionError,
     NameAlreadyTakenError,
+    TestbedDoesNotExistYetError,
     UserInterfaceNotYetImplemented,
     VersionArgumentNeededError,
 )
