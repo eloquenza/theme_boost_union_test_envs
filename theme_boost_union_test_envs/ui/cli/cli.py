@@ -15,29 +15,30 @@ from ...exceptions import (
 
 
 class BoostUnionTestEnvCLI:
-    """BoostUnionTestEnvCLI capsulates all possible commands to provide a CLI.While it is not needed to be in a single class, we still want to do so, even
-    it's just for making sure we are not shadowing python built-ins (see help).
-    """
+    """BoostUnionTestEnvCLI capsulates all possible business operations to provide a CLI.While it is not needed to be in a single class, we still want to do so, even it's just for making sure we are not shadowing python built-ins (see help)."""
 
     def __init__(self, core: BoostUnionTestEnvCore) -> None:
         self.core = core
 
     def init(self) -> None:
+        """The 'init' command initializes the working directory configured in the 'config.yml'. This entails cloning HEAD of moodle-docker into it, creating a ".moodles/" subdirectory which is used as a local cache to for already downloaded Moodle versions.
+        As this command is only needed once, ever, you can completely disregard this.
+        """
         self.core.init_testbed()
 
     def setup(
         self, infrastructure_name: str, git_ref_type: str, git_ref_name: str | int
     ) -> None:
-        """_summary_
+        """The 'setup' command creates a new test infrastructure for a given Boost Union "version". This entails creating a folder in the configured working directory with the given name, creating a subdirectory with the name "moodles", in which the files for the different Moodle containers will reside in, and a "theme" subdirectory, in which Boost Union will be cloned into. The "theme" subdirectory will be mounted into each Moodle container created later on.
+        This is the first step needed to setup a new environment for manual testing.
 
         Args:
-            infrastructure_name (str): _description_
-            git_ref_type (str): _description_
-            git_ref_name (str | int): _description_
+            infrastructure_name (str): Name the test infrastructure should have. Used for the identification of said infrastructure, as well as for it's folder in the configured working dir.
+            git_ref_type (str): String which describes of which type the upcoming git reference will be. Valid values: "commit", "branch" or "pr"
+            git_ref_name (str | int): A valid git reference of the "Boost Union" theme repository which will be used to clone said repository Valid values: A commit sha, a branch name or a pr number.
 
         Raises:
-            fire.core.FireError: _description_
-            fire.core.FireError: _description_
+            fire.core.FireError: An error describing that either the passed git reference type is invalid or that the name is already in use by another test infrastructure
         """
         try:
             if not any([t in git_ref_type for t in GitReferenceType]):
@@ -52,14 +53,14 @@ class BoostUnionTestEnvCLI:
             ) from e
 
     def build(self, infrastructure_name: str, *versions: str) -> None:
-        """_summary_
+        """The 'build' command is responsible for the creation of new Moodle test containers. For each given Moodle version string, a test container setup is created that will include Moodle in the given version, as well as setup said moodle to be used for manual testing. Per default, each Moodle instance is created completely fresh, with a PostgreSQL DB, Mailpit as a e-mail sink.
+        The created Moodle instances can be found inside the infrastructure's "moodles" folder, in an subdirectory equally named to it's Moodle version, e.g.: $infrastructure_directory/moodles/$moodle_version.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be build for
 
         Raises:
-            fire.core.FireError: _description_
-            fire.core.FireError: _description_
+            fire.core.FireError: Error that denotes that the given test infrastructure does not exist, or that either no version at all or an invalid Moodle version string was given
         """
         try:
             self.core.build_infrastructure(infrastructure_name, *versions)
@@ -75,42 +76,46 @@ class BoostUnionTestEnvCLI:
             ) from e
 
     def start(self, infrastructure_name: str, *versions: str) -> None:
-        """_summary_
+        """The 'start' command is used to start up the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be started if available. If no version strings are passed, every available Moodle instance will be started.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be started for
+            *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be started
         """
         self.core.start_environment(infrastructure_name, *versions)
 
     def restart(self, infrastructure_name: str, *versions: str) -> None:
-        """_summary_
+        """The 'restart' command is used to reboot the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be restarted if available. If no version strings are passed, every available Moodle instance will be restarted.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be restarted for
+            *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be restarted
         """
         self.core.restart_environment(infrastructure_name, *versions)
 
     def stop(self, infrastructure_name: str, *versions: str) -> None:
-        """_summary_
+        """The 'stop' command is used to stop the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be stopped if available. If no version strings are passed, every available Moodle instance will be stopped.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be stopped for
+            *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be stopped
         """
         self.core.stop_environment(infrastructure_name, *versions)
 
     def destroy(self, infrastructure_name: str, *versions: str) -> None:
-        """_summary_
+        """The 'destroy' command is used to destroy the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be destroyed if available. If no version strings are passed, every available Moodle instance will be destroyed.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be destroyed for
+            *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be destroyed
         """
         self.core.destroy_environment(infrastructure_name, *versions)
 
     def teardown(self, infrastructure_name: str) -> None:
-        """_summary_
+        """The 'teardown' command is used to tear down the test infrastructure identified by the passed name. This entailes stopping all Moodle containers pertaining to said infrastructure if available and started, deleted all docker related files for said containers and finally removing the checked out Boost Union repository itself.
 
         Args:
-            infrastructure_name (str): _description_
+            infrastructure_name (str): Name of the infrastructure that should be torn down
         """
         self.core.teardown_infrastructure(infrastructure_name)
 
@@ -135,13 +140,16 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
     cli = BoostUnionTestEnvCLI(core)
     fire.Fire(
         {
+            # testbed related commands
             "init": cli.init,
+            # test environment related commands
             "setup": cli.setup,
             "build": cli.build,
+            "teardown": cli.teardown,
+            # moodle container related commands
             "start": cli.start,
             "restart": cli.restart,
             "stop": cli.stop,
             "destroy": cli.destroy,
-            "teardown": cli.teardown,
         },
     )
