@@ -15,12 +15,16 @@ class Testbed:
         self.moodle_cache_dir = moodle_cache_dir
 
     def init(self) -> None:
+        # ugly sentinel value, but works good enough
+        initialized = True
         if not self.working_dir.exists():
             log().info(f"creating test bed @ {self.working_dir}")
             self.working_dir.mkdir()
+            initialized = False
         if not self.moodle_cache_dir.exists():
             log().info(f"creating moodle cache directory @ {self.moodle_cache_dir}")
             self.moodle_cache_dir.mkdir()
+            initialized = False
         if not (self.working_dir / self.docker_repo.directory).exists():
             log().info(f"cloning moodle_docker repo into {self.working_dir}")
             self.docker_repo.clone_repo(
@@ -30,5 +34,10 @@ class Testbed:
             # every newly created environment has access to those without hassle
             for file in template_engine().template_files:
                 shutil.copy(file, self.docker_repo.directory)
+            initialized = False
+        if initialized:
+            log().info(
+                f"no further action needed, test bed has already been initialized: @{self.working_dir}"
+            )
         else:
-            log().info(f"test bed @ {self.working_dir} is already initialized")
+            log().info(f"test bed is now initialized: @{self.working_dir}")
