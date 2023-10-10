@@ -11,6 +11,7 @@ class Testbed:
         self, moodle_docker_repo: GitRepository, moodle_cache_dir: Path
     ) -> None:
         self.working_dir = config().working_dir
+        self.nginx_dir = config().nginx_dir
         self.docker_repo = moodle_docker_repo
         self.moodle_cache_dir = moodle_cache_dir
 
@@ -24,6 +25,10 @@ class Testbed:
         if not self.moodle_cache_dir.exists():
             log().info(f"creating moodle cache directory @ {self.moodle_cache_dir}")
             self.moodle_cache_dir.mkdir()
+            initialized = False
+        if not self.nginx_dir.exists():
+            log().info(f"creating nginx config directory @ {self.nginx_dir}")
+            self.nginx_dir.mkdir()
             initialized = False
         if not (self.working_dir / self.docker_repo.directory).exists():
             log().info(f"cloning moodle_docker repo into {self.working_dir}")

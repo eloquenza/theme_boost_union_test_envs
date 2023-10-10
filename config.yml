@@ -1,5 +1,8 @@
 core:
   working_dir: "./example_pwd"
+  nginx:
+    # relative to core.working_dir
+    dir: ".nginx/"
   moodle:
     cache:
       # relative to core.working_dir
