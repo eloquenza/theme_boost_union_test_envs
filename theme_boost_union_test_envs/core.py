@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable
 
 from .cross_cutting import config, log
@@ -9,7 +10,11 @@ from .domain import (
     TestContainer,
     TestInfrastructure,
 )
-from .exceptions import InfrastructureDoesNotExistYetError, NameAlreadyTakenError
+from .exceptions import (
+    InfrastructureDoesNotExistYetError,
+    NameAlreadyTakenError,
+    TestbedDoesNotExistYetError,
+)
 
 
 class BoostUnionTestEnvCore:
@@ -26,6 +31,25 @@ class BoostUnionTestEnvCore:
     def init_testbed(self) -> None:
         new_testbed = Testbed(self.moodle_docker_repo, self.moodle_cache.directory)
         new_testbed.init()
+
+    def list_infrastructures(self) -> None:
+        # should probably be encapsulated in another business service
+        if not config().working_dir.exists():
+            raise TestbedDoesNotExistYetError
+        infrastructures: list[Path] = [
+            f
+            for f in config().working_dir.iterdir()
+            if f.is_dir() and not f.name.startswith(".")
+        ]
+        # for some reason, a normal pythonic check does not work despite the
+        # list being empty. Defaulting to check length instead. Should still be O(1)
+        if len(infrastructures) == 0:
+            log().info("No infrastructure exists yet")
+        else:
+            log().info("Listing all infrastructures:")
+            for inf in infrastructures:
+                # TODO: maybe add information about checked out Boost Union version.
+                log().info(f"* {inf}")
 
     def setup_infrastructure(
         self, infrastructure_name: str, git_ref: GitReference

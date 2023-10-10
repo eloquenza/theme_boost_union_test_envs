@@ -8,11 +8,11 @@ repos:
   boost_union:
     url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
     # don't edit; relative to the test infrastructure dir
-    dir: "./theme/boost_union"
+    dir: "theme/boost_union"
   moodle_docker:
     url: "https://github.com/moodlehq/moodle-docker"
     # don't edit; relative to the core.working_dir
-    dir: "./moodle-docker"
+    dir: ".moodle-docker"
 adapters:
   moodle:
     downloader:

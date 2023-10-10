@@ -33,6 +33,12 @@ class InfrastructureDoesNotExistYetError(BoostUnionTestEnvValueError):
         super().__init__(*args)
 
 
+# if user tries to use commands on an infrastructure that has not yet been initialized
+class TestbedDoesNotExistYetError(BoostUnionTestEnvValueError):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+
 # if user tries to issue a download for an invalid Moodle Vversion
 class InvalidMoodleVersionError(BoostUnionTestEnvValueError):
     def __init__(self, version: str, *args: object) -> None:
