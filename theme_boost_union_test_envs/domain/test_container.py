@@ -13,7 +13,7 @@ class TestContainer:
         self._run_docker_command("create")
 
     def start(self) -> None:
-        self._run_docker_command("up -d")
+        self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
         self._configure_manual_testing()
         self._print_admin_pw()
         # TODO: for each ver:
