@@ -60,8 +60,13 @@ class TestContainer:
         short_name = f"{infrastructure} - {version}"
         full_name = f"{infrastructure} - {version}"
         summary = f"{infrastructure} - {version}"
+        # create the correct tables on the database server
         self._run_docker_command(
             f'exec webserver php admin/cli/install_database.php --agree-license --fullname="{full_name}" --shortname="{short_name}" --summary="{summary}" --adminpass=$MOODLE_ADMIN_PASSWORD --adminemail="{admin_email}"'
+        )
+        # activate "Boost Union" theme
+        self._run_docker_command(
+            "exec webserver php admin/cli/cfg.php --name=theme --set=boost_union"
         )
 
     def _run_docker_command(self, action: str) -> None:
