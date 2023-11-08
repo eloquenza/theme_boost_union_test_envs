@@ -3,6 +3,7 @@ from .exceptions import (
     InfrastructureDoesNotExistYetError,
     InvalidGitReferenceError,
     InvalidMoodleVersionError,
+    MoodleTestEnvironmentDoesNotExistYetError,
     NameAlreadyTakenError,
     TestbedDoesNotExistYetError,
     UserInterfaceNotYetImplemented,

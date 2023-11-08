@@ -9,6 +9,7 @@ from ...domain.git import GitReference, GitReferenceType
 from ...exceptions import (
     InfrastructureDoesNotExistYetError,
     InvalidMoodleVersionError,
+    MoodleTestEnvironmentDoesNotExistYetError,
     NameAlreadyTakenError,
     TestbedDoesNotExistYetError,
     VersionArgumentNeededError,
@@ -91,7 +92,12 @@ class BoostUnionTestEnvCLI:
             infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be started for
             *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be started
         """
-        self.core.start_environment(infrastructure_name, *versions)
+        try:
+            self.core.start_environment(infrastructure_name, *versions)
+        except MoodleTestEnvironmentDoesNotExistYetError as e:
+            raise fire.core.FireError(
+                f"No test environment available for Moodle version {e.version}"
+            ) from e
 
     def restart(self, infrastructure_name: str, *versions: str) -> None:
         """The 'restart' command is used to reboot the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be restarted if available. If no version strings are passed, every available Moodle instance will be restarted.
@@ -100,7 +106,12 @@ class BoostUnionTestEnvCLI:
             infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be restarted for
             *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be restarted
         """
-        self.core.restart_environment(infrastructure_name, *versions)
+        try:
+            self.core.restart_environment(infrastructure_name, *versions)
+        except MoodleTestEnvironmentDoesNotExistYetError as e:
+            raise fire.core.FireError(
+                f"No test environment available for Moodle version {e.version}"
+            ) from e
 
     def stop(self, infrastructure_name: str, *versions: str) -> None:
         """The 'stop' command is used to stop the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be stopped if available. If no version strings are passed, every available Moodle instance will be stopped.
@@ -109,7 +120,12 @@ class BoostUnionTestEnvCLI:
             infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be stopped for
             *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be stopped
         """
-        self.core.stop_environment(infrastructure_name, *versions)
+        try:
+            self.core.stop_environment(infrastructure_name, *versions)
+        except MoodleTestEnvironmentDoesNotExistYetError as e:
+            raise fire.core.FireError(
+                f"No test environment available for Moodle version {e.version}"
+            ) from e
 
     def destroy(self, infrastructure_name: str, *versions: str) -> None:
         """The 'destroy' command is used to destroy the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be destroyed if available. If no version strings are passed, every available Moodle instance will be destroyed.
@@ -118,7 +134,12 @@ class BoostUnionTestEnvCLI:
             infrastructure_name (str): Name the test infrastructure for which the Moodle test containers should be destroyed for
             *versions (str): Moodle versions that are going to be used to identify which Moodle containers should be destroyed
         """
-        self.core.destroy_environment(infrastructure_name, *versions)
+        try:
+            self.core.destroy_environment(infrastructure_name, *versions)
+        except MoodleTestEnvironmentDoesNotExistYetError as e:
+            raise fire.core.FireError(
+                f"No test environment available for Moodle version {e.version}"
+            ) from e
 
     def teardown(self, infrastructure_name: str) -> None:
         """The 'teardown' command is used to tear down the test infrastructure identified by the passed name. This entailes stopping all Moodle containers pertaining to said infrastructure if available and started, deleted all docker related files for said containers and finally removing the checked out Boost Union repository itself.

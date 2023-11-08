@@ -39,6 +39,13 @@ class TestbedDoesNotExistYetError(BoostUnionTestEnvValueError):
         super().__init__(*args)
 
 
+# if user tries to use commands on an moodle test container that has not yet been created
+class MoodleTestEnvironmentDoesNotExistYetError(BoostUnionTestEnvValueError):
+    def __init__(self, version: str, *args: object) -> None:
+        super().__init__(*args)
+        self.version = version
+
+
 # if user tries to issue a download for an invalid Moodle Vversion
 class InvalidMoodleVersionError(BoostUnionTestEnvValueError):
     def __init__(self, version: str, *args: object) -> None:

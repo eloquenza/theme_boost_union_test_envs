@@ -1,8 +1,11 @@
 import shutil
 import subprocess
+from functools import wraps
 from pathlib import Path
+from typing import Any, Callable
 
 from ..cross_cutting import log
+from ..exceptions import MoodleTestEnvironmentDoesNotExistYetError
 
 
 class TestContainer:
@@ -11,9 +14,20 @@ class TestContainer:
         self.path = container_path
         self.compose_script = "bin/moodle-docker-compose"
 
+    def check_path_existence(func: Callable[..., Any]) -> Callable[..., Any]:  # type: ignore
+        @wraps(func)
+        def wrapper(self) -> Any:  # type: ignore
+            if not self.path.exists():
+                raise MoodleTestEnvironmentDoesNotExistYetError(self.path.name)
+            retval = func(self)
+            return retval
+
+        return wrapper
+
     def create(self) -> None:
         self._run_docker_command("create")
 
+    @check_path_existence
     def start(self) -> None:
         self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
         self._configure_manual_testing()
@@ -22,23 +36,27 @@ class TestContainer:
         log().info(f"Enter the following URL into your browser: http://{host}:{port}/")
         log().info(f"Login as admin with pw: {pw}")
 
+    @check_path_existence
     def restart(self) -> None:
         self._run_docker_command("restart")
 
+    @check_path_existence
     def stop(self) -> None:
         self._run_docker_command("stop")
 
+    @check_path_existence
     def destroy(self) -> None:
         self._run_docker_command("down")
         # TODO: removing the directory shouldn't be the concern of the TestContainer itself
         if self.path.exists():
             shutil.rmtree(self.path)
 
+    @check_path_existence
     def container_access_info(self) -> tuple[str, str, str]:
         host = self._extract_from_env("MOODLE_DOCKER_WEB_HOST")
         port = self._extract_from_env("MOODLE_DOCKER_WEB_PORT")
         admin_password = self._extract_from_env("MOODLE_ADMIN_PASSWORD")
-        return host, port, admin_password
+        return (host, port, admin_password)
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"
