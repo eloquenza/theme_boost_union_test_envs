@@ -6,11 +6,25 @@ from pathlib import Path
 from string import Template
 from typing import Any, cast
 
+import jinja2
+
+from . import config
+
 
 class TemplateEngine:
     def __init__(self) -> None:
+        # used to manage access to all template files, so we can easily copy them into our test environments.
+        # copying is managed by the testbed itself currently
         files_in_cwd = (Path(__file__).parent / "templates").glob("**/*")
         self.template_files = [file for file in files_in_cwd if file.is_file()]
+
+    def test_environment_overview_html(self, infrastructures: dict[str, Any]) -> None:
+        index_html = Path(__file__).parent / "templates" / "index.html.j2"
+        with index_html.open("r") as f:
+            template = jinja2.Template(f.read())
+        rendered_text = template.render(infrastructures)
+        index_html = config().nginx_dir / "index.html"
+        index_html.write_text(rendered_text)
 
     def docker_customisation(
         self, template_path: Path, boost_union_source_dir: Path
@@ -44,7 +58,7 @@ class TemplateEngine:
 
     def _create_new_admin_pw(self) -> str:
         alphabet = string.ascii_letters + string.digits
-        return "".join(secrets.choice(alphabet) for i in range(20))
+        return "".join(secrets.choice(alphabet) for i in range(32))
 
     def _find_free_port(self) -> Any:
         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:

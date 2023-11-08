@@ -4,7 +4,12 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 
 from .core import BoostUnionTestEnvCore
-from .cross_cutting import ApplicationConfigManager, ApplicationLogger, TemplateEngine
+from .cross_cutting import (
+    ApplicationConfigManager,
+    ApplicationLogger,
+    InfrastructureYAMLParser,
+    TemplateEngine,
+)
 from .domain import GitRepository, MoodleCache, MoodleDownloader
 from .ui import cli_main, gui_main
 
@@ -55,8 +60,8 @@ class CrossCuttingConcerns(containers.DeclarativeContainer):
         config=config,
     )
 
+    infrastructure_yaml_parser = providers.Singleton(InfrastructureYAMLParser)
     log = providers.Singleton(ApplicationLogger)
-
     template_engine = providers.Singleton(TemplateEngine)
 
 
@@ -85,6 +90,8 @@ class Application(containers.DeclarativeContainer):
         moodle_docker_repo=domain.moodle_docker_repo,
         boost_union_repo=domain.boost_union_repo,
         moodle_cache=domain.moodle_cache,
+        yaml_parser=cross_cutting_concerns.infrastructure_yaml_parser,
+        template_engine=cross_cutting_concerns.template_engine,
     )
 
 

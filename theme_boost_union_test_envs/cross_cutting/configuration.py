@@ -11,10 +11,11 @@ class ApplicationConfigManager:
         # just exposing the values that are actual of value for cross cutting
         # concerns
         self.working_dir = Path(config[_CORE_KEY]["working_dir"]).resolve()
-        self.nginx_dir = self.working_dir / config[_CORE_KEY]["nginx"]["dir"]
+        self.nginx_dir: Path = self.working_dir / config[_CORE_KEY]["nginx"]["dir"]
         self.moodle_docker_dir = (
             self.working_dir / config[_REPO_KEY]["moodle_docker"]["dir"]
         )
+        self.infra_yaml = self.working_dir / "infrastructure.yaml"
 
 
 def config() -> ApplicationConfigManager:
