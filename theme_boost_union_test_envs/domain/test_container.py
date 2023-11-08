@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -5,8 +6,9 @@ from ..cross_cutting import log
 
 
 class TestContainer:
-    def __init__(self, compose_file_path: Path) -> None:
-        self.path = compose_file_path
+    def __init__(self, container_path: Path) -> None:
+        # TODO: check if path exists
+        self.path = container_path
         self.compose_script = "bin/moodle-docker-compose"
 
     def create(self) -> None:
@@ -15,39 +17,41 @@ class TestContainer:
     def start(self) -> None:
         self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
         self._configure_manual_testing()
-        self._print_admin_pw()
-        # TODO: for each ver:
-        # TODO:   call docker compose start
-        # TODO:   check if services really started
-        # TODO:   post urls in console
+        port, pw = self.container_access_info()
+        log().info("Please access the created Moodle container here:")
+        log().info(
+            f"Enter the following URL into your browser: http://localhost:{port}/"
+        )
+        log().info(f"Login as admin with pw: {pw}")
 
     def restart(self) -> None:
         self._run_docker_command("restart")
-        # TODO: for each ver: - maybe implement via stop and start here?
-        # TODO:   call docker compose stop
-        # TODO:   call docker compose start
 
     def stop(self) -> None:
         self._run_docker_command("stop")
-        # TODO: for each ver:
-        # TODO:   call docker compose stop
-        # TODO:   make sure the services stopped gracefully
-        # TODO:   list all URLs that are not available anymore?
 
     def destroy(self) -> None:
         self._run_docker_command("down")
-        # TODO: for each ver:
-        # TODO:   make sure containers are stopped
-        # TODO:   else ask user to stop the container
-        # TODO:   call docker compose rm?
-        # TODO:   make sure command went well
-        # TODO:   print out which containers are still running, so user knows what they need to stop
+        # TODO: removing the directory shouldn't be the concern of the TestContainer itself
+        if self.path.exists():
+            shutil.rmtree(self.path)
 
-    def _print_admin_pw(self) -> None:
-        log().info("Log in as admin with the following password:")
-        subprocess.run(
-            [". ./.env && echo $MOODLE_ADMIN_PASSWORD"], cwd=self.path, shell=True
-        )
+    def container_access_info(self) -> tuple[str, str]:
+        web_port = subprocess.run(
+            [". ./.env && echo $MOODLE_DOCKER_WEB_PORT"],
+            cwd=self.path,
+            shell=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        admin_password = subprocess.run(
+            [". ./.env && echo $MOODLE_ADMIN_PASSWORD"],
+            cwd=self.path,
+            shell=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return web_port, admin_password
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"

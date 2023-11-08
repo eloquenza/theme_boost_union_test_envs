@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from typing import Any
 
 from ..cross_cutting import config, log, template_engine
 from ..domain import MoodleCache, TestContainer
@@ -32,7 +33,7 @@ class TestInfrastructure:
         log().info("done init - find your test infrastructure here:")
         log().info(f"\tpath: {self.directory }")
 
-    def build(self, *versions: str) -> None:
+    def build(self, *versions: str) -> dict[Any, Any]:
         if not versions:
             raise VersionArgumentNeededError()
         moodles = self._get_moodles_dir()
@@ -42,12 +43,13 @@ class TestInfrastructure:
             log().info(
                 "not building new envs - test envs already presented for selected moodle versions"
             )
-            return
+            return {}
         # create a new test environment for the remaining moodle versions
         log().info("building envs for the following versions:")
         for version in new_versions:
             log().info(f"* {version}")
         docker_sources = config().moodle_docker_dir
+        built_moodles = {}
         for version_nr, archive_path in new_versions.items():
             log().info(f"{20*'-'} {version_nr} {20*'-'}")
             log().info("creating test env")
@@ -79,6 +81,12 @@ class TestInfrastructure:
             )
             container = TestContainer(moodle_version_path)
             container.create()
+            port, pw = container.container_access_info()
+            built_moodles[version_nr] = {
+                "status": "CREATED",
+                "url": f"localhost:{port}",
+                "admin_pw": pw,
+            }
             # TODO: replace all the params from moodle-docker with the correct ones:
             # TODO: * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
             # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME
@@ -86,6 +94,7 @@ class TestInfrastructure:
             # TODO: * MOODLE_DOCKER_PHP_VERSION
             log().info(f"test env for {version_nr} done")
         log().info("your moodles are cooked al-dente; enjoy")
+        return built_moodles
 
     def _find_sources_for_versions(self, path: Path, *versions: str) -> dict[str, Path]:
         # return dict of moodles (versions + their source archives) without a existing test environment
@@ -105,7 +114,7 @@ class TestInfrastructure:
         # TODO: then call path rm to delete the folders
         # TODO: then delete the whole folder
         # pathlib functions require the dir to be empty, but we just can safely
-        # delete all files now
+        # delete all files now, so we resort to shutil
         if self.directory.exists():
             shutil.rmtree(self.directory)
             log().info(f"removed test infrastructure {self.directory.name}")
