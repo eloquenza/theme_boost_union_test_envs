@@ -17,11 +17,9 @@ class TestContainer:
     def start(self) -> None:
         self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
         self._configure_manual_testing()
-        port, pw = self.container_access_info()
+        host, port, pw = self.container_access_info()
         log().info("Please access the created Moodle container here:")
-        log().info(
-            f"Enter the following URL into your browser: http://localhost:{port}/"
-        )
+        log().info(f"Enter the following URL into your browser: http://{host}:{port}/")
         log().info(f"Login as admin with pw: {pw}")
 
     def restart(self) -> None:
@@ -36,22 +34,11 @@ class TestContainer:
         if self.path.exists():
             shutil.rmtree(self.path)
 
-    def container_access_info(self) -> tuple[str, str]:
-        web_port = subprocess.run(
-            [". ./.env && echo $MOODLE_DOCKER_WEB_PORT"],
-            cwd=self.path,
-            shell=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        admin_password = subprocess.run(
-            [". ./.env && echo $MOODLE_ADMIN_PASSWORD"],
-            cwd=self.path,
-            shell=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        return web_port, admin_password
+    def container_access_info(self) -> tuple[str, str, str]:
+        host = self._extract_from_env("MOODLE_DOCKER_WEB_HOST")
+        port = self._extract_from_env("MOODLE_DOCKER_WEB_PORT")
+        admin_password = self._extract_from_env("MOODLE_ADMIN_PASSWORD")
+        return host, port, admin_password
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"
@@ -61,13 +48,27 @@ class TestContainer:
         full_name = f"{infrastructure} - {version}"
         summary = f"{infrastructure} - {version}"
         # create the correct tables on the database server
-        self._run_docker_command(
-            f'exec webserver php admin/cli/install_database.php --agree-license --fullname="{full_name}" --shortname="{short_name}" --summary="{summary}" --adminpass=$MOODLE_ADMIN_PASSWORD --adminemail="{admin_email}"'
+        self._run_local_php_script(
+            "admin/cli/install_database.php",
+            f'--agree-license --fullname="{full_name}" --shortname="{short_name}" --summary="{summary}" --adminpass=$MOODLE_ADMIN_PASSWORD --adminemail="{admin_email}"',
         )
         # activate "Boost Union" theme
-        self._run_docker_command(
-            "exec webserver php admin/cli/cfg.php --name=theme --set=boost_union"
+        self._run_local_php_script(
+            "admin/cli/cfg.php",
+            "--name=theme --set=boost_union",
         )
+
+    def _extract_from_env(self, var_name: str) -> str:
+        return subprocess.run(
+            [f". ./.env && echo ${var_name}"],
+            cwd=self.path,
+            shell=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    def _run_local_php_script(self, script: str, args: str) -> None:
+        self._run_docker_command(f"exec webserver php {script} {args}")
 
     def _run_docker_command(self, action: str) -> None:
         result = subprocess.run(
