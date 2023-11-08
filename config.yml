@@ -18,7 +18,7 @@ repos:
     # don't edit; relative to the test infrastructure dir
     dir: "theme/boost_union"
   moodle_docker:
-    url: "https://github.com/moodlehq/moodle-docker"
+    url: "https://github.com/eloquenza/moodle-docker"
     # don't edit; relative to the core.working_dir
     dir: ".moodle-docker"
 adapters:
