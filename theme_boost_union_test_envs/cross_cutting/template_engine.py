@@ -13,18 +13,19 @@ from . import config
 
 class TemplateEngine:
     def __init__(self) -> None:
+        self.template_path = Path(__file__).parent / "templates"
         # used to manage access to all template files, so we can easily copy them into our test environments.
         # copying is managed by the testbed itself currently
-        files_in_cwd = (Path(__file__).parent / "templates").glob("**/*")
+        files_in_cwd = self.template_path.glob("**/*")
         self.template_files = [file for file in files_in_cwd if file.is_file()]
 
     def test_environment_overview_html(self, infrastructures: dict[str, Any]) -> None:
-        index_html = Path(__file__).parent / "templates" / "index.html.j2"
+        index_html = self.template_path / "index.html.j2"
         with index_html.open("r") as f:
             template = jinja2.Template(f.read())
         rendered_text = template.render(infrastructures)
-        index_html = config().nginx_dir / "index.html"
-        index_html.write_text(rendered_text)
+        if config().overview_page_path.parent.exists():
+            config().overview_page_path.write_text(rendered_text)
 
     def docker_customisation(
         self, template_path: Path, boost_union_source_dir: Path
@@ -41,9 +42,9 @@ class TemplateEngine:
         self, template_path: Path, infrastructure_name: str, version: str
     ) -> None:
         env_file = template_path / ".env"
-        compose_safe_version = self._create_compose_safe_version_string(version)
+        compose_safe_name = self._create_compose_safe_name(infrastructure_name, version)
         substitutes = {
-            "REPLACE_COMPOSE_NAME": f"{infrastructure_name+'-moodle-'+compose_safe_version}",
+            "REPLACE_COMPOSE_NAME": compose_safe_name,
             "REPLACE_MOODLE_SOURCE_PATH": f"{template_path / 'moodle'}",
             "REPLACE_PASSWORD": self._create_new_admin_pw(),
             "REPLACE_MOODLE_WEB_PORT": self._find_free_port(),
@@ -52,6 +53,36 @@ class TemplateEngine:
         template = Template(env_file.read_text())
         replaced_strings = template.substitute(substitutes)
         env_file.write_text(replaced_strings)
+
+    def nginx_config(
+        self, infrastructure_name: str, moodle_version: str, port: str
+    ) -> None:
+        nginx_conf_template = self.template_path / "moodle_nginx.conf"
+        safe_name = self._create_compose_safe_name(infrastructure_name, moodle_version)
+        new_config = config().nginx_dir / f"{safe_name}.conf"
+        # TODO:
+        softlinked_nginx_dir = ""
+        substitutes = {
+            "REPLACE_DEFAULT_INTERFACE": config().default_interface,
+            "REPLACE_SERVER_NAME": safe_name,
+            "REPLACE_BASE_URL": config().base_url,
+            "REPLACE_PORT": port,
+            "REPLACE_CERT_PATH": config().cert_chain_path,
+            "REPLACE_PRIVKEY_PATH": config().cert_key_path,
+            "REPLACE_ACCESS_LOG_PATH": f"{softlinked_nginx_dir}/{safe_name}_proxy_access_ssl_log",
+            "REPLACE_ERROR_LOG_PATH": f"{softlinked_nginx_dir}/{safe_name}_proxy_error_ssl_log",
+        }
+        template = Template(nginx_conf_template.read_text())
+        # using safe_substitute here instead as the nginx config contains variables starting with "$", which would make the default substitute call throw an KeyError as we are not replacing the template placeholder which we do not want
+        replaced_strings = template.safe_substitute(substitutes)
+        new_config.write_text(replaced_strings)
+        return
+
+    def _create_compose_safe_name(
+        self, infrastructure_name: str, moodle_version: str
+    ) -> str:
+        compose_safe_version = self._create_compose_safe_version_string(moodle_version)
+        return f"{infrastructure_name+'-moodle-'+compose_safe_version}"
 
     def _create_compose_safe_version_string(self, version: str) -> str:
         return version.replace(".", "_")

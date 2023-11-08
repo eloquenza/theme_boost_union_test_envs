@@ -87,8 +87,8 @@ class TestInfrastructure:
                 "url": f"localhost:{port}",
                 "admin_pw": pw,
             }
+            self.template_engine.nginx_config(self.directory.name, version_nr, port)
             # TODO: replace all the params from moodle-docker with the correct ones:
-            # TODO: * MOODLE_WWW_PORT: 0.0.0.0:$empty_port
             # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME
             # TODO: * MOODLE_VER
             # TODO: * MOODLE_DOCKER_PHP_VERSION

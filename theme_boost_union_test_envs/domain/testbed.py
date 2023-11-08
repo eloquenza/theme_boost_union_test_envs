@@ -41,6 +41,8 @@ class Testbed:
             for file in template_engine().template_files:
                 if file.name.endswith("html.j2"):
                     continue
+                if file.name == "nginx.conf":
+                    continue
                 shutil.copy(file, self.docker_repo.directory)
             initialized = False
         if not self.infra_yaml.exists():

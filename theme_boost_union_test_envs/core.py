@@ -29,6 +29,7 @@ from .exceptions import (
 def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(func)
     def wrapper_decorator(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+        # all the wrapped function with all passed args
         value = func(*args, **kwargs)
         # make sure the html page is updated after each command
         infrastructure_yaml = yaml_parser().load_testbed_info()
@@ -65,6 +66,7 @@ class BoostUnionTestEnvCore:
         # should probably be encapsulated in another business service
         if not config().working_dir.exists():
             raise TestbedDoesNotExistYetError
+        # Reading infrastructure info from "yaml file database" and printing it
         infrastructures = self.yaml_parser.load_testbed_info()
         if not infrastructures:
             log().info("No infrastructure exists yet")
@@ -82,7 +84,7 @@ class BoostUnionTestEnvCore:
             raise NameAlreadyTakenError("Infrastructure exists already")
         new_infra = TestInfrastructure(path, self.boost_union_repo, self.moodle_cache)
         new_infra.setup(git_ref)
-        # TODO: add infrastructure name + gitref to listing page
+        # Adding infrastructure name + gitref to file database
         self.yaml_parser.add_infrastructure(
             {
                 infrastructure_name: {
@@ -101,7 +103,7 @@ class BoostUnionTestEnvCore:
             path, self.boost_union_repo, self.moodle_cache
         )
         built_moodles = existing_infra.build(*versions)
-        # TODO: add new moodle test env to test infrastructure to listing page
+        # Adding new moodle environments in selected infrastructure to file database
         self.yaml_parser.add_infrastructure(
             {infrastructure_name: {"moodles": built_moodles}}
         )
@@ -117,7 +119,7 @@ class BoostUnionTestEnvCore:
         # TODO: check if container are running, stop them first
         # TODO: then call docker remove to delete the images
         existing_infra.teardown(infrastructure_name)
-        # TODO: remove infrastructure from listing page
+        # Removing infrastructure from file database
         self.yaml_parser.remove_infrastructure(infrastructure_name)
 
     @recreate_overview_html

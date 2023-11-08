@@ -55,9 +55,11 @@ class TestContainer:
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"
-        short_name = "Moodle"
-        full_name = "Docker'd Moodle"
-        summary = f"Docker'd Moodle {self.path.name}"
+        version = self.path.name
+        infrastructure = self.path.parent.parent.name
+        short_name = f"{infrastructure} - {version}"
+        full_name = f"{infrastructure} - {version}"
+        summary = f"{infrastructure} - {version}"
         self._run_docker_command(
             f'exec webserver php admin/cli/install_database.php --agree-license --fullname="{full_name}" --shortname="{short_name}" --summary="{summary}" --adminpass=$MOODLE_ADMIN_PASSWORD --adminemail="{admin_email}"'
         )
