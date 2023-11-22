@@ -47,7 +47,7 @@ class TemplateEngine:
             "REPLACE_COMPOSE_NAME": compose_safe_name,
             "REPLACE_MOODLE_SOURCE_PATH": f"{template_path / 'moodle'}",
             "REPLACE_PASSWORD": self._create_new_admin_pw(),
-            "REPLACE_MOODLE_WEB_HOST": f"{compose_safe_name}.{config().base_url}",
+            "REPLACE_MOODLE_WEB_HOST": f"{config().base_url}",
             "REPLACE_MOODLE_WEB_PORT": self._find_free_port(),
             "REPLACE_MOODLE_DB_PORT": self._find_free_port(),
         }

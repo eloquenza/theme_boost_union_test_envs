@@ -1,4 +1,6 @@
+import sys
 from enum import Enum
+from pathlib import Path
 
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
@@ -58,6 +60,10 @@ class CrossCuttingConcerns(containers.DeclarativeContainer):
     config_manager = providers.Singleton(
         ApplicationConfigManager,
         config=config,
+        # only wiring chosen environment config as path here, because
+        # pre-injection it's not possible to use 'config.environment' as
+        # argument to read from another config file
+        environment_file=config.environment.as_(lambda p: Path(sys.path[0]) / p),
     )
 
     infrastructure_yaml_parser = providers.Singleton(InfrastructureYAMLParser)

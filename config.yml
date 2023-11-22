@@ -1,25 +1,21 @@
+# if not used for local testing: change to correct environment
+environment: "env.local.yml"
 core:
-  working_dir: "./example_pwd"
   nginx:
-    base_url: "focused-cray.92-205-184-244.plesk.page"
-    default_interface: "92.205.184.244"
-    cert_chain_path: "/etc/letsencrypt/live/focused-cray.92-205-184-244.plesk.page/fullchain.pem"
-    cert_key_path: "/etc/letsencrypt/live/focused-cray.92-205-184-244.plesk.page/privkey.pem"
-    overview_page_path: "/var/www/vhosts/focused-cray.92-205-184-244.plesk.page/httpdocs/index.html"
-    # relative to core.working_dir
+    # don't edit after init; relative to environment.working_dir
     dir: ".nginx/"
   moodle:
     cache:
-      # relative to core.working_dir
+      # don't edit after init; relative to environment.working_dir
       dir: ".moodles/"
 repos:
   boost_union:
     url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
-    # don't edit; relative to the test infrastructure dir
+    # don't edit after init; relative to the test infrastructure dir
     dir: "theme/boost_union"
   moodle_docker:
     url: "https://github.com/eloquenza/moodle-docker"
-    # don't edit; relative to the core.working_dir
+    # don't edit after init; relative to the environment.working_dir
     dir: ".moodle-docker"
 adapters:
   moodle:
