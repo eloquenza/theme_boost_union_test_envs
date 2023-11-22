@@ -24,6 +24,18 @@ class TestInfrastructure:
         self,
         git_ref: GitReference,
     ) -> None:
+        """Setups the test infrastructure for a given "Boost Union" 'version' (denoted by it's git reference). To do so, it creates the following directory structure, e.g.:
+            ./$infrastructure_name
+            |-- ./moodles/
+            |-- ./theme/boost_union
+
+        The infrastructure name is given during the construction of the object.
+        The "moodles" sub-directory will contain all Moodle test container files, i.e. their docker compose service declarations and other scripts as well as the sources to the Moodle version.
+        The "./theme/boost_union" sub-directory will contain the cloned git repository of "Boost Union" with the given git reference. This directory will be mounted into each Moodle test container.
+
+        Args:
+            git_ref (GitReference): Denoting which Boost Union "version" will be used for this test infrastructure and all contained Moodle test containers
+        """
         log().info(f"initializing new test infrastructure named '{self.directory}'")
         self.boost_union_repo.clone_repo(self.directory, git_ref)
         moodles = self._get_moodles_dir()
@@ -91,7 +103,6 @@ class TestInfrastructure:
             }
             self.template_engine.nginx_config(self.directory.name, version_nr, port)
             # TODO: replace all the params from moodle-docker with the correct ones:
-            # TODO: * NGINX_SERVER_NAME: see COMPOSE_NAME
             # TODO: * MOODLE_VER
             # TODO: * MOODLE_DOCKER_PHP_VERSION
             log().info(f"test env for {version_nr} done")
@@ -99,11 +110,22 @@ class TestInfrastructure:
         return built_moodles
 
     def _find_sources_for_versions(self, path: Path, *versions: str) -> dict[str, Path]:
-        # return dict of moodles (versions + their source archives) without a existing test environment
+        """This function iterates through the given versions list to return a dictionary which contains a Moodle version string mapped to it's downloaded source archive (tar.gz).
+        If for a given version, the source archive does not exist locally, it will be downloaded to the "Moodle disk cache".
+        The created dictionary will not contain Moodle versions for which a test environment already exists.
+
+        Args:
+            path (Path): the path in which the "STOPPED test environments of this infrastructure reside
+            versions (tuple[str, ...]): the versions for which a new Moodle test environment should be created
+
+        Returns:
+            dict[str, Path]: Dictionary that mappes Moodle version strings without an already existing test environment to it's downloaded source archive.
+        """
         sources_to_versions: dict[str, Path] = {}
         for ver in versions:
             vers_path = path / ver
             if not vers_path.exists():
+                # adding the Moodle version string + it's source archive via merge operator
                 sources_to_versions |= {ver: self.moodle_cache.get(ver)}
         return sources_to_versions
 

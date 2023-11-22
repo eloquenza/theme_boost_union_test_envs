@@ -168,6 +168,7 @@ def configure_cli_logger() -> None:
 def cli_main(core: BoostUnionTestEnvCore) -> None:
     configure_cli_logger()
     cli = BoostUnionTestEnvCLI(core)
+    # Initializes the Fire library with the functions we wanna see in the CLI.
     fire.Fire(
         {
             # testbed related commands

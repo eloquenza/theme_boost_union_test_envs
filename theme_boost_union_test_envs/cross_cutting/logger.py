@@ -6,6 +6,10 @@ import loguru
 
 
 class ApplicationLogger:
+    """A class wrapping our logger.
+    Makes it easier to swap logger implementations or even hide the one we selected.
+    """
+
     def __init__(self) -> None:
         self.log = loguru.logger
 

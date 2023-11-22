@@ -27,9 +27,18 @@ from .exceptions import (
 
 
 def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
+    """This decorator makes sure that after the wrapped function has been executed successfully, the static webpage displaying all available test environments will be updated.
+
+    Args:
+        func (Callable[..., Any]): a function that should be wrapped to make sure the static webpage is updated afterwards
+
+    Returns:
+        Callable[..., Any]: the wrapped function
+    """
+
     @functools.wraps(func)
     def wrapper_decorator(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
-        # all the wrapped function with all passed args
+        # call the wrapped function with all passed args
         value = func(*args, **kwargs)
         # make sure the html page is updated after each command
         infrastructure_yaml = yaml_parser().load_testbed_info()
@@ -63,7 +72,6 @@ class BoostUnionTestEnvCore:
 
     @recreate_overview_html
     def list_infrastructures(self) -> None:
-        # should probably be encapsulated in another business service
         if not config().working_dir.exists():
             raise TestbedDoesNotExistYetError
         # Reading infrastructure info from "yaml file database" and printing it
@@ -129,6 +137,7 @@ class BoostUnionTestEnvCore:
             TestContainer.start,
             *versions,
         )
+        # make sure the selected moodle test containers are listed as "STARTED" in the yaml DB
         self.yaml_parser.add_infrastructure(
             {
                 infrastructure_name: {
@@ -149,6 +158,7 @@ class BoostUnionTestEnvCore:
             TestContainer.stop,
             *versions,
         )
+        # make sure the selected moodle test containers are listed as "STOPPED in the yaml DB
         self.yaml_parser.add_infrastructure(
             {
                 infrastructure_name: {
@@ -169,6 +179,7 @@ class BoostUnionTestEnvCore:
             TestContainer.restart,
             *versions,
         )
+        # TODO: should update yaml DB to STARTED? Would involve waiting until restart happened to make sure the right status is listed
 
     @recreate_overview_html
     def destroy_environment(self, infrastructure_name: str, *versions: str) -> None:
@@ -177,6 +188,7 @@ class BoostUnionTestEnvCore:
             TestContainer.destroy,
             *versions,
         )
+        # make sure the moodle environment is removed from our "yaml database"
         for ver in versions:
             self.yaml_parser.remove_moodle(infrastructure_name, ver)
 
@@ -186,11 +198,23 @@ class BoostUnionTestEnvCore:
         function: Callable[[TestContainer], None],
         *versions: str,
     ) -> None:
+        """Helper function to streamline the way our container functions operate. The only difference between our container functions is the action (start/up, stop, restart, destroy/down) we are issuing towards the containers. The logging and the 'algorithm' is otherwise the same.
+
+        Args:
+            infrastructure_name (str): the infrastructure for which the containers should be started for
+            function (Callable[[TestContainer], None]): the action that should be issued to the containers (start/up, stop, restart, destroy/down)
+            versions (tuple[str, ...]): moodle versions that decide which containers should be started
+
+        Raises:
+            InfrastructureDoesNotExistYetError: raised if the passed infrastructure doesn't exist, therefore no containers can exist
+        """
         infrastructure_path = config().working_dir / infrastructure_name
         if not infrastructure_path.exists():
             raise InfrastructureDoesNotExistYetError()
+        # use function name for logging as it describes perfectly what is going to happen
         action = function.__name__
         log().info(f"{action} envs for the following versions:")
+        # if no version string has been passed, we want to issue the action to all available moodle test containers
         if not versions:
             log().info(f"{action}ing all existing envs")
             # TODO: return all available versions to start these
@@ -199,5 +223,6 @@ class BoostUnionTestEnvCore:
         for ver in versions:
             path = infrastructure_path / "moodles" / ver
             log().info(f"{action}ing container for moodle {path.name}")
+            # pythonic way to call a passed, higher-order class instance function on an newly created object
             function(TestContainer(path))
             log().info(f"done {action}ing container")

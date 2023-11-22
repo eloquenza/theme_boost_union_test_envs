@@ -8,4 +8,5 @@ from theme_boost_union_test_envs import app
 from theme_boost_union_test_envs.app import UserInterface
 
 if __name__ == "__main__":
+    # spawns the CLI of our application
     sys.exit(app.main(UserInterface.CLI))
