@@ -44,16 +44,16 @@ class BoostUnionTestEnvCLI:
 
         Args:
             infrastructure_name (str): Name the test infrastructure should have. Used for the identification of said infrastructure, as well as for it's folder in the configured working dir.
-            git_ref_type (str): String which describes of which type the upcoming git reference will be. Valid values: "commit", "branch" or "pr"
-            git_ref_name (str | int): A valid git reference of the "Boost Union" theme repository which will be used to clone said repository Valid values: A commit sha, a branch name or a pr number.
+            git_ref_type (str): String which describes of which type the upcoming git reference will be. Valid values: "commit", "branch", "pr" or "tag"
+            git_ref_name (str | int): A valid git reference of the "Boost Union" theme repository which will be used to clone said repository Valid values: A commit sha, a branch name, a pr number or a tag name.
 
         Raises:
             fire.core.FireError: An error describing that either the passed git reference type is invalid or that the name is already in use by another test infrastructure
         """
         try:
-            if not any([t in git_ref_type for t in GitReferenceType]):
+            if not any([git_ref_type in t for t in GitReferenceType]):
                 raise fire.core.FireError(
-                    "The 2nd argument needs to be either commit, branch or pr"
+                    "The 2nd argument needs to be either commit, branch, pr OR tag"
                 )
             git_ref = GitReference(git_ref_name, GitReferenceType(git_ref_type))
             self.core.setup_infrastructure(infrastructure_name, git_ref)

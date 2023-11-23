@@ -9,17 +9,19 @@ from ..cross_cutting import log
 Branch = str
 Commit = str
 PullRequest = int
+Tag = str
 
 
 class GitReferenceType(str, Enum):
     BRANCH = "branch"
     COMMIT = "commit"
     PULL_REQUEST = "pr"
+    TAG = "tag"
 
 
 @dataclass
 class GitReference:
-    ref: Branch | Commit | PullRequest
+    ref: Branch | Commit | PullRequest | Tag
     type: GitReferenceType
 
 
@@ -37,16 +39,23 @@ class GitRepository:
 
     def clone_repo(self, destination: Path, git_ref: GitReference) -> None:
         self.directory = destination / self.directory
+        # Due to the inner workings of GitPython and git itself, we could functionally use checkout for branch, commit or tag, and it would still work.
+        # Actually a user could also just use commit and submit a branch name; it would still work.
+        # This will allow an infrastructure to be created with the wrong GitReferenceType, but this is largely for information only anyways after the cloning, so it should be fine.
         log().info("cloning repository...")
-        # In case we want to check out a branch, let's check it out directly
-        # Saves us a bit of traffic.
-        if git_ref.type == GitReferenceType.BRANCH:
+        # Because a tag is functionally the same as a branch, i.e. identifying a commit by it's hash ID, just (ideally) never changing; we should handle it the same
+        if (
+            git_ref.type == GitReferenceType.BRANCH
+            or git_ref.type == GitReferenceType.TAG
+        ):
+            # In case we want to check out a branch/tag, let's check it out
+            # directly. Saves us a bit of traffic.
             repo = self.__clone_repo(self.directory, branch=git_ref.ref)
-        # In any other case, we just want to clone the repo with the default main branch
+        # In any other case, we just want to clone the repo with the default main/master branch
         else:
             repo = self.__clone_repo(self.directory)
-        # Because you cannot clone a repo via commit sha directly, we need to check out seperately
         if git_ref.type == GitReferenceType.COMMIT:
+            # Because you cannot clone a repo via commit sha directly, we need to check out seperately
             repo.git.checkout(git_ref.ref)
         # PRs are a bit more tricky as they are not a default Git feature, and GitHub and GitLab handle them a bit differently.
         # Fortunately for us, we only need to handle GitHub for now.
