@@ -2,6 +2,7 @@ import sys
 from typing import Any
 
 import fire
+from git import GitCommandError
 
 from ...core import BoostUnionTestEnvCore
 from ...cross_cutting import log
@@ -57,6 +58,10 @@ class BoostUnionTestEnvCLI:
                 )
             git_ref = GitReference(git_ref_name, GitReferenceType(git_ref_type))
             self.core.setup_infrastructure(infrastructure_name, git_ref)
+        except GitCommandError:
+            raise fire.core.FireError(
+                "Given git reference does not exist; please check it's spelling"
+            )
         except NameAlreadyTakenError as e:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
