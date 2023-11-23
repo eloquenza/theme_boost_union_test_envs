@@ -27,7 +27,6 @@ class ApplicationConfigManager:
         # nginx related settings
         self.nginx_dir: Path = self.working_dir / config[_CORE_KEY][_NGINX_KEY]["dir"]
         self.base_url = environment[_NGINX_KEY]["base_url"]
-        self.default_interface = environment[_NGINX_KEY]["default_interface"]
         self.cert_chain_path = environment[_NGINX_KEY]["cert_chain_path"]
         self.cert_key_path = environment[_NGINX_KEY]["cert_key_path"]
         self.overview_page_path = Path(environment[_NGINX_KEY]["overview_page_path"])
