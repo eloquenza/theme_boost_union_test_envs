@@ -84,7 +84,9 @@ class TestInfrastructure:
             host, port, pw = container.container_access_info()
             built_moodles[version_nr] = {
                 "status": "CREATED",
-                "url": f"{host}:{port}",
+                "url": f"https://{host}"
+                if config().is_proxied
+                else f"http://{host}:{port}",
                 "admin_pw": pw,
             }
             self.template_engine.nginx_config(self.directory.name, version_nr, port)

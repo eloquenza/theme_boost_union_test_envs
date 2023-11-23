@@ -18,7 +18,7 @@
             <li><b>{{moodle}}</b></li>
                 <ul>
                     <li>Status: {{infrastructures[infrastructure]["moodles"][moodle]["status"]}}</li>
-                    <li>URL: <a href="http://{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}">http://{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}</a></li>
+                    <li>URL: <a href="{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}">{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}</a></li>
                     <li>Admin password: {{infrastructures[infrastructure]["moodles"][moodle]["admin_pw"]}}</li>
                 </ul>
             {% endfor %}

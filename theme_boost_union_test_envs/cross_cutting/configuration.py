@@ -22,6 +22,7 @@ class ApplicationConfigManager:
 
         # core related settings
         self.working_dir = Path(environment["working_dir"]).resolve()
+        self.is_proxied = True if environment["proxied"] == "yes" else False
         self.infra_yaml = self.working_dir / "infrastructure.yaml"
         # nginx related settings
         self.nginx_dir: Path = self.working_dir / config[_CORE_KEY][_NGINX_KEY]["dir"]

@@ -39,15 +39,18 @@ class TemplateEngine:
         docker_customisation_file.write_text(replaced_strings)
 
     def environment_file(
-        self, template_path: Path, infrastructure_name: str, version: str
+        self, template_path: Path, infrastructure_name: str, moodle_version: str
     ) -> None:
         env_file = template_path / ".env"
-        compose_safe_name = self._create_compose_safe_name(infrastructure_name, version)
+        compose_safe_name = self._create_compose_safe_name(
+            infrastructure_name, moodle_version
+        )
+        web_host = self._create_web_url(infrastructure_name, moodle_version)
         substitutes = {
             "REPLACE_COMPOSE_NAME": compose_safe_name,
             "REPLACE_MOODLE_SOURCE_PATH": f"{template_path / 'moodle'}",
             "REPLACE_PASSWORD": self._create_new_admin_pw(),
-            "REPLACE_MOODLE_WEB_HOST": f"{config().base_url}",
+            "REPLACE_MOODLE_WEB_HOST": web_host,
             "REPLACE_MOODLE_WEB_PORT": self._find_free_port(),
             "REPLACE_MOODLE_DB_PORT": self._find_free_port(),
         }
@@ -63,9 +66,13 @@ class TemplateEngine:
         new_config = config().nginx_dir / f"{safe_name}.conf"
         # TODO:
         softlinked_nginx_dir = ""
+        # get only "path" from the fqdn, we don't need the domain name, called
+        # location in nginx
+        location = self._create_web_url(infrastructure_name, moodle_version).partition(
+            config().base_url
+        )[2]
         substitutes = {
-            "REPLACE_DEFAULT_INTERFACE": config().default_interface,
-            "REPLACE_SERVER_NAME": safe_name,
+            "REPLACE_LOCATION": location,
             "REPLACE_BASE_URL": config().base_url,
             "REPLACE_PORT": port,
             "REPLACE_CERT_PATH": config().cert_chain_path,
@@ -78,6 +85,16 @@ class TemplateEngine:
         replaced_strings = template.safe_substitute(substitutes)
         new_config.write_text(replaced_strings)
         return
+
+    def _create_web_url(
+        self,
+        infrastructure_name: str,
+        moodle_version: str,
+    ) -> str:
+        web_url = f"{config().base_url}"
+        if config().is_proxied:
+            web_url = web_url + f"/{infrastructure_name}/{moodle_version}"
+        return web_url
 
     def _create_compose_safe_name(
         self, infrastructure_name: str, moodle_version: str
