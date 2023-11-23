@@ -4,6 +4,8 @@ from typing import Any, cast
 
 import yaml
 
+from ..exceptions import BoostUnionTestEnvValueError
+
 _CORE_KEY = "core"
 _REPO_KEY = "repos"
 _NGINX_KEY = "nginx"
@@ -22,14 +24,30 @@ class ApplicationConfigManager:
 
         # core related settings
         self.working_dir = Path(environment["working_dir"]).resolve()
-        self.is_proxied = True if environment["proxied"] == "yes" else False
+        # implicitly truthy as python transforms yes and no
+        self.is_proxied = environment["proxied"]
         self.infra_yaml = self.working_dir / "infrastructure.yaml"
         # nginx related settings
         self.nginx_dir: Path = self.working_dir / config[_CORE_KEY][_NGINX_KEY]["dir"]
         self.base_url = environment[_NGINX_KEY]["base_url"]
+        # if we are setting up new test environments behind a proxy, these NEED # to be set so the reverse proxy will actually work correct
+        if self.is_proxied and (
+            not environment[_NGINX_KEY]["cert_chain_path"]
+            or not environment[_NGINX_KEY]["cert_key_path"]
+            or not environment[_NGINX_KEY]["overview_page_path"]
+        ):
+            raise BoostUnionTestEnvValueError(
+                "Certificate file paths as well as path for the overview webpage must be set"
+            )
+        # do not try to provide a default here, no sensible option left
         self.cert_chain_path = environment[_NGINX_KEY]["cert_chain_path"]
         self.cert_key_path = environment[_NGINX_KEY]["cert_key_path"]
-        self.overview_page_path = Path(environment[_NGINX_KEY]["overview_page_path"])
+        # default to working_dir/index.html; allows for debugging it
+        self.overview_page_path = (
+            self.working_dir / "index.html"
+            if not environment[_NGINX_KEY]["overview_page_path"]
+            else Path(environment[_NGINX_KEY]["overview_page_path"])
+        )
         # moodle related settings
         self.moodle_docker_dir = (
             self.working_dir / config[_REPO_KEY]["moodle_docker"]["dir"]
