@@ -104,8 +104,6 @@ class TestInfrastructure:
                 "db_port": db_port,
             }
             self.template_engine.nginx_config(self.directory.name, version_nr, port)
-            # TODO: replace all the params from moodle-docker with the correct ones:
-            # TODO: * MOODLE_VER
             log().info(f"test env for {version_nr} done")
         log().info("your moodles are cooked al-dente; enjoy")
         return built_moodles
