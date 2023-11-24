@@ -53,23 +53,23 @@ Ready to contribute? Here's how to set up `theme_boost_union_test_envs` for loca
 1. Fork the `theme_boost_union_test_envs` repo on GitHub.
 2. Clone your fork locally
 
-```
-    $ git clone git@github.com:your_name_here/theme_boost_union_test_envs.git
+```shell
+    git clone git@github.com:your_name_here/theme_boost_union_test_envs.git
 ```
 
-1. Ensure [poetry](https://python-poetry.org/docs/) and [conda](https://docs.conda.io/projects/miniconda/en/latest/) (either anaconda or miniconda is fine, or your preferred virtualenv tool) is installed.
+1. Ensure [poetry](https://python-poetry.org/docs/) and [conda](https://docs.conda.io/projects/miniconda/en/latest/) (either anaconda or miniconda is fine, or your preferred virtualenv tool) are installed.
 2. Start your virtualenv and install dependencies:
 
-```
-    $ conda create -n boost-union-envs python=3.11
-    $ conda activate boost-union-envs
-    $ poetry install -E test -E doc -E dev
+```shell
+    conda create -n boost-union-envs python=3.11
+    conda activate boost-union-envs
+    poetry install
 ```
 
 5. Create a branch for local development:
 
-```
-    $ git checkout -b name-of-your-bugfix-or-feature
+```shell
+    git checkout -b name-of-your-bugfix-or-feature
 ```
 
    Now you can make your changes locally.
@@ -77,16 +77,16 @@ Ready to contribute? Here's how to set up `theme_boost_union_test_envs` for loca
 6. When you're done making changes, check that your changes pass the
    tests, including testing other Python versions, with tox:
 
-```
-    $ tox
+```shell
+    tox
 ```
 
 7. Commit your changes and push your branch to GitHub:
 
-```
-    $ git add .
-    $ git commit -m "Your detailed description of your changes."
-    $ git push origin name-of-your-bugfix-or-feature
+```shell
+    git add .
+    git commit -m "Your detailed description of your changes."
+    git push origin name-of-your-bugfix-or-feature
 ```
 
 8. Submit a pull request through the GitHub website.
@@ -107,8 +107,8 @@ Before you submit a pull request, check that it meets these guidelines:
 
 To run a subset of tests.
 
-```
-    $ pytest tests.test_theme_boost_union_test_envs
+```shell
+pytest tests.test_theme_boost_union_test_envs
 ```
 
 ## Deploying
@@ -117,8 +117,8 @@ A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.md).
 Then run:
 
-```
-$ poetry patch # possible: major / minor / patch
-$ git push
-$ git push --tags
+```shell
+poetry patch # possible: major / minor / patch
+git push
+git push --tags
 ```
