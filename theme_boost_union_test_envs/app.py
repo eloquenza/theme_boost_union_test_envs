@@ -117,7 +117,7 @@ def main(
     interface_choice: UserInterface,
 ) -> int:
     app = Application()
-    # This starts the wiring for our DI library
+    # This starts the wiring for our DI library by providing it the package from which the required classes should come from
     app.wire(packages=["theme_boost_union_test_envs"])
     _spawn_interface(interface_choice)
     return 0
