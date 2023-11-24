@@ -54,7 +54,7 @@ class TestContainer:
         """
         self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
         self._configure_manual_testing()
-        host, port, pw = self.container_access_info()
+        host, port, pw, _ = self.container_access_info()
         log().info("Please access the created Moodle container here:")
         log().info(f"Enter the following URL into your browser: http://{host}:{port}/")
         log().info(f"Login as admin with pw: {pw}")
@@ -84,16 +84,17 @@ class TestContainer:
             shutil.rmtree(self.path)
 
     @check_path_existence
-    def container_access_info(self) -> tuple[str, str, str]:
+    def container_access_info(self) -> tuple[str, str, str, str]:
         """Returns the host, port and admin's password needed to access it's test container.
 
         Returns:
             tuple[str, str, str]: host, port and admin's PW in a tuple.
         """
-        host = self._extract_from_env("MOODLE_DOCKER_WEB_HOST")
-        port = self._extract_from_env("MOODLE_DOCKER_WEB_PORT")
+        www_host = self._extract_from_env("MOODLE_DOCKER_WEB_HOST")
+        www_port = self._extract_from_env("MOODLE_DOCKER_WEB_PORT")
         admin_password = self._extract_from_env("MOODLE_ADMIN_PASSWORD")
-        return (host, port, admin_password)
+        db_port = self._extract_from_env("MOODLE_DOCKER_DB_PORT")
+        return (www_host, www_port, admin_password, db_port)
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"

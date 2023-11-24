@@ -93,13 +93,15 @@ class TestInfrastructure:
             )
             container = TestContainer(moodle_version_path)
             container.create()
-            host, port, pw = container.container_access_info()
+            host, port, pw, db_port = container.container_access_info()
             built_moodles[version_nr] = {
                 "status": "CREATED",
                 "url": f"https://{host}"
                 if config().is_proxied
                 else f"http://{host}:{port}",
                 "admin_pw": pw,
+                "www_port": port,
+                "db_port": db_port,
             }
             self.template_engine.nginx_config(self.directory.name, version_nr, port)
             # TODO: replace all the params from moodle-docker with the correct ones:

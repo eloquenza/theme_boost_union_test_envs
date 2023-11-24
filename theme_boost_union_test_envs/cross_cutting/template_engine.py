@@ -10,7 +10,7 @@ import jinja2
 from packaging import version
 
 from ..exceptions import UnsupportedMoodleVersionError
-from . import config, log
+from . import config, log, yaml_parser
 
 
 class TemplateEngine:
@@ -115,10 +115,19 @@ class TemplateEngine:
         return "".join(secrets.choice(alphabet) for i in range(32))
 
     def _find_free_port(self) -> Any:
-        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-            s.bind(("", 0))
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            return s.getsockname()[1]
+        infrastructures = yaml_parser().load_testbed_info()
+        used_ports = []
+        for _, data in infrastructures.items():
+            for _, access_info in data["moodles"].items():
+                used_ports.append(access_info["www_port"])
+                used_ports.append(access_info["db_port"])
+        while True:
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+                s.bind(("", 0))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                new_port = s.getsockname()[1]
+                if new_port not in used_ports:
+                    return new_port
 
     def _select_fitting_docker_image_tag(self, moodle_version: str) -> str:
         supported_versions = config().moodle_versions_to_php_versions
