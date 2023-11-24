@@ -13,6 +13,7 @@ from ...exceptions import (
     MoodleTestEnvironmentDoesNotExistYetError,
     NameAlreadyTakenError,
     TestbedDoesNotExistYetError,
+    UnsupportedMoodleVersionError,
     VersionArgumentNeededError,
 )
 
@@ -84,6 +85,10 @@ class BoostUnionTestEnvCLI:
         except InfrastructureDoesNotExistYetError as e:
             raise fire.core.FireError(
                 "The infrastructure you have given does not exist, please check the spelling"
+            ) from e
+        except UnsupportedMoodleVersionError as e:
+            raise fire.core.FireError(
+                f"Moodle version {e.version} is unsupported. It's ancient."
             ) from e
         except InvalidMoodleVersionError as e:
             raise fire.core.FireError(

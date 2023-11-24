@@ -7,8 +7,10 @@ from string import Template
 from typing import Any, cast
 
 import jinja2
+from packaging import version
 
-from . import config
+from ..exceptions import UnsupportedMoodleVersionError
+from . import config, log
 
 
 class TemplateEngine:
@@ -53,6 +55,9 @@ class TemplateEngine:
             "REPLACE_MOODLE_WEB_HOST": web_host,
             "REPLACE_MOODLE_WEB_PORT": self._find_free_port(),
             "REPLACE_MOODLE_DB_PORT": self._find_free_port(),
+            "REPLACE_MOODLE_DOCKER_PHP_VERSION": self._select_fitting_docker_image_tag(
+                moodle_version
+            ),
         }
         template = Template(env_file.read_text())
         replaced_strings = template.substitute(substitutes)
@@ -114,6 +119,35 @@ class TemplateEngine:
             s.bind(("", 0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             return s.getsockname()[1]
+
+    def _select_fitting_docker_image_tag(self, moodle_version: str) -> str:
+        supported_versions = config().moodle_versions_to_php_versions
+        # if given moodle version is outside of defined moodle-to-php dictionary, default to container image tag "dev", if and only if the major or minor version is higher.
+        # using max(dict) here instead of just selecting the first element of the map. ensures we will not have an error just because somebody *wink* in the future updating our map does not respect the carefully chosen insertion order
+        # empty string as little, dirty sentinel value
+        image_tag = ""
+        if (version.parse(moodle_version).major > max(supported_versions).major) or (
+            version.parse(moodle_version).major == max(supported_versions).major
+            and version.parse(moodle_version).minor > max(supported_versions).minor
+        ):
+            image_tag = "dev"
+        else:
+            for ver in supported_versions:
+                # For the given moodle_version, we want to ideally select the newest supported php version - to ensure that we have probably no issues.
+                # To do so, we iterate through our map and check if given moodle_version can be fitted to a available version.
+                # As the map contains only breakpoints, i.e. Moodle versions where the supported PHP versions change, we need to iterate through the map and check if the given moodle_ver is higher than the currently selected key we are iterating over.
+                # If true; take the 2nd element of it's persisted value (a tuple), which denotes the newest suppported php version
+                # else: go to next iteration, selecting the next persisted moodle version string and try again
+                # Using version.parse here to compare the versions, because lexigraphically comparing versions does not really work well, i.e. 3.9 would be "higher" (>) than 3.11. because it would compare the 9 to the first digit of eleven, i.e. 1.
+                # Handrolling a parsing for this isn't trivial, and there isn't a official Moodle specification for how they structure Moodle versions, apparently. We could just explode the version string into tuples and compare then, or we try more reliable solutions. It mostly follows semver (X.Y.Z), but it isn't clarified it does so. It also allows release candidates (e.g. 4.3.0-rc1) or beta (e.g. 4.3.0-beta) versions. Relying on python's version.parse works from a few pre-tests. "4.3.0-beta" isn't allowed per python specification, but for backwards compatibility to older specifications, it still is transformed into "4.3.0b0"; for which the comparison work again.
+                if version.parse(moodle_version) > ver:
+                    image_tag = str(supported_versions[ver][1])
+                    log().info(f"selecting php version {image_tag} for this container")
+                    break
+            # at this point, the given moodle_version is so old, we really do not support it anymore. raise exception and scold user for molesting ancient moodle versions.
+        if not image_tag:
+            raise UnsupportedMoodleVersionError(moodle_version)
+        return image_tag
 
 
 def template_engine() -> TemplateEngine:

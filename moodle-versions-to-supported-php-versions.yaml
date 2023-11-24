@@ -1,0 +1,30 @@
+# References for the following mapping:
+# Moodle requirements for PHP versions:
+#   * https://moodledev.io/general/development/policies/php
+#   * https://docs.moodle.org/403/en/PHP
+# Available docker images:
+#   * https://hub.docker.com/r/moodlehq/moodle-php-apache
+#
+# format:
+# mdl_ver:  [oldest_supported_php_ver, newest_supported_php_ver]
+# {oldest,newest}_supported_php_ver are in fact docker image tags instead of php versions, but they map onto each other.
+# This only works because the moodle-php-apache project defines image tags to be the same as php tags (with a few notable differences, that we do not care for)
+# generally: only list breakpoints here, no need to pollute the list.
+# e.g. either new Moodle major/minor release, or new PHP requirements
+4.3:   [8.0, 8.2]
+4.2.3: [8.0, 8.2]
+4.2:   [8.0, 8.1]
+4.1:   [7.4, 8.1]
+4.0:   [7.3, 8.0]
+3.11:  [7.3, 8.0]
+# 3.10 not listed, has same requirements as 3.9
+3.9:   [7.2, 7.4]
+3.8.3: [7.1, 7.4]
+3.7:   [7.1, 7.3]
+# listed as it marks a breakpoint for newest_supported_php_ver
+3.6.4: [7.0, 7.3]
+# not listing 3.5 and 3.6 as they have the same requirements as 3.4
+3.4:   [7.0, 7.2]
+# oldest supported version is actually 5.4.4, but the oldest image of the moodle-php-apache uses 5.6 php, so listing that here
+3.0.1: [5.6, 7.0]
+# we are definitely not supporting older versions

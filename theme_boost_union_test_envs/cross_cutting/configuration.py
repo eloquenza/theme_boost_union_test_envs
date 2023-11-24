@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import yaml
+from packaging import version
 
 from ..exceptions import BoostUnionTestEnvValueError
 
@@ -12,16 +13,29 @@ _NGINX_KEY = "nginx"
 
 
 class ApplicationConfigManager:
-    def __init__(self, config: dict[Any, Any], environment_file: Path) -> None:
+    def __init__(
+        self,
+        config: dict[Any, Any],
+        environment_file: Path,
+        moodle_versions_to_php_versions: dict[Any, Any],
+    ) -> None:
         # for some reason, the passed argument 'config' isn't of type providers.Configuration anymore, which makes saving it and accessing all elements with the dot notation not possible
-        # just exposing the values that are actual of value for cross cutting
-        # concerns
 
         # reading environment-related configs from yaml
         with environment_file.open("r") as env:
             # don't forget, it's python: no need to forward_declare before
             environment = yaml.safe_load(env)
 
+        # converting the int/str values from the read yaml into actual version types
+        self.moodle_versions_to_php_versions = {
+            version.parse(str(moodle_ver)): [
+                version.parse(str(ver)) for ver in php_vers
+            ]
+            for moodle_ver, php_vers in moodle_versions_to_php_versions.items()
+        }
+
+        # just exposing the values that are actual of value for cross cutting
+        # concerns
         # core related settings
         self.working_dir = Path(environment["working_dir"]).resolve()
         # implicitly truthy as python transforms yes and no

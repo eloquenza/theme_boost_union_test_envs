@@ -60,7 +60,15 @@ class MoodleTestEnvironmentDoesNotExistYetError(BoostUnionTestEnvValueError):
 
 
 class InvalidMoodleVersionError(BoostUnionTestEnvValueError):
-    """Exception raised if user tries to issue a download or test container for an invalid Moodle version"""
+    """Exception raised if user tries to issue a download or test container for an invalid/unknown/non-existing Moodle version"""
+
+    def __init__(self, version: str, *args: object) -> None:
+        super().__init__(*args)
+        self.version = version
+
+
+class UnsupportedMoodleVersionError(BoostUnionTestEnvValueError):
+    """Exception raised if user tries to issue a download or test container for an unsupported (i.e. too old) Moodle version"""
 
     def __init__(self, version: str, *args: object) -> None:
         super().__init__(*args)

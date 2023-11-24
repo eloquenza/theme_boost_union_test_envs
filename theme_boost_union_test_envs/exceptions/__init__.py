@@ -6,6 +6,7 @@ from .exceptions import (
     MoodleTestEnvironmentDoesNotExistYetError,
     NameAlreadyTakenError,
     TestbedDoesNotExistYetError,
+    UnsupportedMoodleVersionError,
     UserInterfaceNotYetImplemented,
     VersionArgumentNeededError,
 )
