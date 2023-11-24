@@ -89,7 +89,6 @@ class TemplateEngine:
         # using safe_substitute here instead as the nginx config contains variables starting with "$", which would make the default substitute call throw an KeyError as we are not replacing the template placeholder which we do not want
         replaced_strings = template.safe_substitute(substitutes)
         new_config.write_text(replaced_strings)
-        return
 
     def _create_web_url(
         self,
