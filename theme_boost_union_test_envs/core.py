@@ -44,6 +44,18 @@ def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper_decorator
 
 
+def check_testbed_existence(func: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(func)
+    def wrapper_decorator(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+        if not config().working_dir.exists():
+            raise TestbedDoesNotExistYetError
+        # call the wrapped function with all passed args
+        value = func(*args, **kwargs)
+        return value
+
+    return wrapper_decorator
+
+
 class BoostUnionTestEnvCore:
     def __init__(
         self,
@@ -59,9 +71,8 @@ class BoostUnionTestEnvCore:
         new_testbed.init()
 
     @recreate_overview_html
+    @check_testbed_existence
     def list_infrastructures(self) -> None:
-        if not config().working_dir.exists():
-            raise TestbedDoesNotExistYetError
         # Reading infrastructure info from "yaml file database" and printing it
         infrastructures = self.yaml_parser.load_testbed_info()
         if not infrastructures:
@@ -72,6 +83,7 @@ class BoostUnionTestEnvCore:
             log().info(f"Listing all infrastructures: \n{pretty_infras}")
 
     @recreate_overview_html
+    @check_testbed_existence
     def setup_infrastructure(
         self, infrastructure_name: str, git_ref: GitReference
     ) -> None:
@@ -86,6 +98,7 @@ class BoostUnionTestEnvCore:
         )
 
     @recreate_overview_html
+    @check_testbed_existence
     def build_infrastructure(self, infrastructure_name: str, *versions: str) -> None:
         path = config().working_dir / infrastructure_name
         if not path.exists():
@@ -111,6 +124,7 @@ class BoostUnionTestEnvCore:
             # Normally we should restart after removing a test environment too, but it shouldn't be harmful to leave Nginx running with a few flawed configs
 
     @recreate_overview_html
+    @check_testbed_existence
     def teardown_infrastructure(self, infrastructure_name: str) -> None:
         path = config().working_dir / infrastructure_name
         if not path.exists():
@@ -164,6 +178,7 @@ class BoostUnionTestEnvCore:
         for ver in versions:
             self.yaml_parser.remove_moodle(infrastructure_name, ver)
 
+    @check_testbed_existence
     def _container_call_helper(
         self,
         infrastructure_name: str,

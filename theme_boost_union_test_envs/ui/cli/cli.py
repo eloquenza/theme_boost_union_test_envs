@@ -29,7 +29,7 @@ class BoostUnionTestEnvCLI:
             self.core.list_infrastructures()
         except TestbedDoesNotExistYetError:
             raise fire.core.FireError(
-                "No test infrastructure can be found as the test bed has not been initialized yet."
+                "No test infrastructure can be found as the test bed has not been initialized yet. Please initialize the test bed."
             )
 
     def init(self) -> None:
@@ -67,6 +67,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 "Your chosen name for the test infrastructure already exists, please choose a different one"
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No test infrastructure can be setup as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def build(self, infrastructure_name: str, *versions: str) -> None:
         """The 'build' command is responsible for the creation of new Moodle test containers. For each given Moodle version string, a test container setup is created that will include Moodle in the given version, as well as setup said moodle to be used for manual testing. Per default, each Moodle instance is created completely fresh, with a PostgreSQL DB, Mailpit as a e-mail sink.
@@ -94,6 +98,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 f"Moodle version {e.version} is invalid, please check if you wrote the correct one."
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No test infrastructure can be build as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def start(self, infrastructure_name: str, *versions: str) -> None:
         """The 'start' command is used to start up the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be started if available. If no version strings are passed, every available Moodle instance will be started.
@@ -108,6 +116,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 f"No test environment available for Moodle version {e.version}"
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No Moodle test instance can be started as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def restart(self, infrastructure_name: str, *versions: str) -> None:
         """The 'restart' command is used to reboot the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be restarted if available. If no version strings are passed, every available Moodle instance will be restarted.
@@ -122,6 +134,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 f"No test environment available for Moodle version {e.version}"
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No Moodle test instance can be restarted as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def stop(self, infrastructure_name: str, *versions: str) -> None:
         """The 'stop' command is used to stop the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be stopped if available. If no version strings are passed, every available Moodle instance will be stopped.
@@ -136,6 +152,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 f"No test environment available for Moodle version {e.version}"
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No Moodle test instance can be stopped as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def destroy(self, infrastructure_name: str, *versions: str) -> None:
         """The 'destroy' command is used to destroy the Moodle instances previously created. For the given test infrastructure, the Moodle container containing the corresponding version will be destroyed if available. If no version strings are passed, every available Moodle instance will be destroyed.
@@ -150,6 +170,10 @@ class BoostUnionTestEnvCLI:
             raise fire.core.FireError(
                 f"No test environment available for Moodle version {e.version}"
             ) from e
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No Moodle test instance can be destroyed as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
     def teardown(self, infrastructure_name: str) -> None:
         """The 'teardown' command is used to tear down the test infrastructure identified by the passed name. This entailes stopping all Moodle containers pertaining to said infrastructure if available and started, deleted all docker related files for said containers and finally removing the checked out Boost Union repository itself.
@@ -157,7 +181,12 @@ class BoostUnionTestEnvCLI:
         Args:
             infrastructure_name (str): Name of the infrastructure that should be torn down
         """
-        self.core.teardown_infrastructure(infrastructure_name)
+        try:
+            self.core.teardown_infrastructure(infrastructure_name)
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No test infrastructure can be found as the test bed has not been initialized yet. Please initialize the test bed."
+            )
 
 
 def configure_cli_logger() -> None:
