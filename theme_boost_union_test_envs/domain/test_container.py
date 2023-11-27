@@ -59,7 +59,12 @@ class TestContainer:
         self._configure_manual_testing()
         host, port, pw, _ = self.get_access_info()
         log().info("Please access the created Moodle container here:")
-        log().info(f"Enter the following URL into your browser: http://{host}:{port}/")
+        if config().is_proxied:
+            log().info(f"Enter the following URL into your browser: https://{host}/")
+        else:
+            log().info(
+                f"Enter the following URL into your browser: http://{host}:{port}/"
+            )
         log().info(f"Login as admin with pw: {pw}")
 
     @check_path_existence
