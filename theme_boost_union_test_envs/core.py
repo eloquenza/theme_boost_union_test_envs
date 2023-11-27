@@ -1,4 +1,5 @@
 import functools
+import subprocess
 from pathlib import Path
 from pprint import PrettyPrinter
 from typing import Any, Callable
@@ -95,6 +96,19 @@ class BoostUnionTestEnvCore:
         self.yaml_parser.add_moodles_to_infrastructure(
             infrastructure_name, built_moodles
         )
+        if config().is_proxied:
+            log().info(
+                "restarting nginx, our proxy server; you will lose connection if you are logged in via web-browser"
+            )
+            # This looks dangerous, but isn't.
+            # I require of the administrator to provide the user which runs this script to allow an exception solely for the restart of nginx.
+            # This can be done by sudo visudo -f /etc/sudoers.d/allow-systemctl-for-boost-union-testing
+            # and entering: $user ALL=NOPASSWD: /usr/bin/systemctl restart nginx
+            # This "convoluted" idea came from a lazy perspective of not wanting to handle root privileges inside this programm.
+            # This way, only the spawned subshell gains sudo rights; and also only specifically for a Nginx restart
+            subprocess.run(["sudo systemctl restart nginx"], shell=True)
+            # We are only restarting Nginx after a new test env has been added, as we want to reduce the amount of restarts.
+            # Normally we should restart after removing a test environment too, but it shouldn't be harmful to leave Nginx running with a few flawed configs
 
     @recreate_overview_html
     def teardown_infrastructure(self, infrastructure_name: str) -> None:
