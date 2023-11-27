@@ -33,26 +33,11 @@ class Adapters(containers.DeclarativeContainer):
 
 class Domain(containers.DeclarativeContainer):
 
-    config = providers.Configuration()
-
     adapters = providers.DependenciesContainer()
 
     moodle_cache = providers.Singleton(
         MoodleCache,
-        cache_dir=config.core.moodle.cache.dir,
         downloader=adapters.moodle_downloader,
-    )
-
-    moodle_docker_repo = providers.Factory(
-        GitRepository,
-        repo_url=config.repos.moodle_docker.url,
-        local_dir=config.repos.moodle_docker.dir,
-    )
-
-    boost_union_repo = providers.Factory(
-        GitRepository,
-        repo_url=config.repos.boost_union.url,
-        local_dir=config.repos.boost_union.dir,
     )
 
 
@@ -95,14 +80,10 @@ class Application(containers.DeclarativeContainer):
     domain = providers.Container(
         Domain,
         adapters=adapters,
-        config=config,
     )
 
     core = providers.Singleton(
         BoostUnionTestEnvCore,
-        moodle_docker_repo=domain.moodle_docker_repo,
-        boost_union_repo=domain.boost_union_repo,
-        moodle_cache=domain.moodle_cache,
         yaml_parser=cross_cutting_concerns.infrastructure_yaml_parser,
         template_engine=cross_cutting_concerns.template_engine,
     )

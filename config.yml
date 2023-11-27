@@ -1,22 +1,10 @@
 # if not used for local testing: change to correct environment
 environment: "env.local.yml"
-core:
-  nginx:
-    # don't edit after init; relative to environment.working_dir
-    dir: ".nginx/"
-  moodle:
-    cache:
-      # don't edit after init; relative to environment.working_dir
-      dir: ".moodles/"
 repos:
   boost_union:
     url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
-    # don't edit after init; relative to the test infrastructure dir
-    dir: "theme/boost_union"
   moodle_docker:
     url: "https://github.com/eloquenza/moodle-docker"
-    # don't edit after init; relative to the environment.working_dir
-    dir: ".moodle-docker"
 adapters:
   moodle:
     downloader:

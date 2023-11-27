@@ -26,8 +26,49 @@ class InfrastructureYAMLParser:
         with open(self.yaml, "w") as f:
             yaml.dump(new_yaml, f)
 
-    def add_infrastructure(self, data: MutableMapping[Any, Any]) -> None:
+    def new_infrastructure(
+        self,
+        infrastructure_name: str,
+        git_ref: str | int,
+        git_ref_type: str,
+    ) -> None:
         saved_yaml = self.load_testbed_info()
+        data = {
+            infrastructure_name: {
+                "git_ref": {"type": git_ref_type, "reference": git_ref},
+                "moodles": {},
+            }
+        }
+        new_yaml = merge(saved_yaml, data)
+        self.serialize_testbed_info(new_yaml)
+
+    def add_moodles_to_infrastructure(
+        self,
+        infrastructure_name: str,
+        new_moodles: dict[Any, Any],
+    ) -> None:
+        saved_yaml = self.load_testbed_info()
+        data = {infrastructure_name: {"moodles": new_moodles}}
+        new_yaml = merge(saved_yaml, data)
+        self.serialize_testbed_info(new_yaml)
+
+    def change_moodle_test_container_status(
+        self,
+        infrastructure_name: str,
+        state: str,
+        *versions: str,
+    ) -> None:
+        saved_yaml = self.load_testbed_info()
+        data = {
+            infrastructure_name: {
+                "moodles": {
+                    ver: {
+                        "status": state,
+                    }
+                    for ver in versions
+                }
+            }
+        }
         new_yaml = merge(saved_yaml, data)
         self.serialize_testbed_info(new_yaml)
 

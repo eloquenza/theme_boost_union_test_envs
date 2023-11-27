@@ -1,6 +1,6 @@
 import functools
-import pprint
 from pathlib import Path
+from pprint import PrettyPrinter
 from typing import Any, Callable
 
 from .cross_cutting import (
@@ -11,14 +11,7 @@ from .cross_cutting import (
     template_engine,
     yaml_parser,
 )
-from .domain import (
-    GitReference,
-    GitRepository,
-    MoodleCache,
-    Testbed,
-    TestContainer,
-    TestInfrastructure,
-)
+from .domain import GitReference, Testbed, TestContainer, TestInfrastructure
 from .exceptions import (
     InfrastructureDoesNotExistYetError,
     NameAlreadyTakenError,
@@ -53,21 +46,15 @@ def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
 class BoostUnionTestEnvCore:
     def __init__(
         self,
-        moodle_docker_repo: GitRepository,
-        boost_union_repo: GitRepository,
-        moodle_cache: MoodleCache,
         yaml_parser: InfrastructureYAMLParser,
         template_engine: TemplateEngine,
     ) -> None:
-        self.moodle_docker_repo = moodle_docker_repo
-        self.boost_union_repo = boost_union_repo
-        self.moodle_cache = moodle_cache
         self.yaml_parser = yaml_parser
         self.template_engine = template_engine
 
     @recreate_overview_html
     def init_testbed(self) -> None:
-        new_testbed = Testbed(self.moodle_docker_repo, self.moodle_cache.directory)
+        new_testbed = Testbed()
         new_testbed.init()
 
     @recreate_overview_html
@@ -80,7 +67,7 @@ class BoostUnionTestEnvCore:
             log().info("No infrastructure exists yet")
         else:
             # pretty-print dict
-            pretty_infras = pprint.PrettyPrinter(depth=4).pformat(infrastructures)
+            pretty_infras = PrettyPrinter(depth=4).pformat(infrastructures)
             log().info(f"Listing all infrastructures: \n{pretty_infras}")
 
     @recreate_overview_html
@@ -90,16 +77,11 @@ class BoostUnionTestEnvCore:
         path = config().working_dir / infrastructure_name
         if path.exists():
             raise NameAlreadyTakenError("Infrastructure exists already")
-        new_infra = TestInfrastructure(path, self.boost_union_repo, self.moodle_cache)
+        new_infra = TestInfrastructure(path)
         new_infra.setup(git_ref)
         # Adding infrastructure name + gitref to file database
-        self.yaml_parser.add_infrastructure(
-            {
-                infrastructure_name: {
-                    "git_ref": {"type": git_ref.type.name, "reference": git_ref.ref},
-                    "moodles": {},
-                }
-            }
+        self.yaml_parser.new_infrastructure(
+            infrastructure_name, git_ref.ref, git_ref.type.name
         )
 
     @recreate_overview_html
@@ -107,13 +89,11 @@ class BoostUnionTestEnvCore:
         path = config().working_dir / infrastructure_name
         if not path.exists():
             raise InfrastructureDoesNotExistYetError()
-        existing_infra = TestInfrastructure(
-            path, self.boost_union_repo, self.moodle_cache
-        )
+        existing_infra = TestInfrastructure(path)
         built_moodles = existing_infra.build(*versions)
         # Adding new moodle environments in selected infrastructure to file database
-        self.yaml_parser.add_infrastructure(
-            {infrastructure_name: {"moodles": built_moodles}}
+        self.yaml_parser.add_moodles_to_infrastructure(
+            infrastructure_name, built_moodles
         )
 
     @recreate_overview_html
@@ -121,9 +101,7 @@ class BoostUnionTestEnvCore:
         path = config().working_dir / infrastructure_name
         if not path.exists():
             raise InfrastructureDoesNotExistYetError()
-        existing_infra = TestInfrastructure(
-            path, self.boost_union_repo, self.moodle_cache
-        )
+        existing_infra = TestInfrastructure(path)
         # TODO: check if container are running, stop them first
         # TODO: then call docker remove to delete the images
         existing_infra.teardown(infrastructure_name)
@@ -138,17 +116,8 @@ class BoostUnionTestEnvCore:
             *versions,
         )
         # make sure the selected moodle test containers are listed as "STARTED" in the yaml DB
-        self.yaml_parser.add_infrastructure(
-            {
-                infrastructure_name: {
-                    "moodles": {
-                        ver: {
-                            "status": "STARTED",
-                        }
-                        for ver in versions
-                    }
-                }
-            }
+        self.yaml_parser.change_moodle_test_container_status(
+            infrastructure_name, "STARTED", *versions
         )
 
     @recreate_overview_html
@@ -159,17 +128,8 @@ class BoostUnionTestEnvCore:
             *versions,
         )
         # make sure the selected moodle test containers are listed as "STOPPED in the yaml DB
-        self.yaml_parser.add_infrastructure(
-            {
-                infrastructure_name: {
-                    "moodles": {
-                        ver: {
-                            "status": "STOPPED",
-                        }
-                        for ver in versions
-                    }
-                }
-            }
+        self.yaml_parser.change_moodle_test_container_status(
+            infrastructure_name, "STOPPED", *versions
         )
 
     @recreate_overview_html

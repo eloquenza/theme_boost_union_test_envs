@@ -1,6 +1,7 @@
 import time
 from http import HTTPStatus
 from pathlib import Path
+from typing import cast
 
 import requests
 from requests.exceptions import HTTPError
@@ -45,14 +46,12 @@ class MoodleDownloader:
 
 
 class MoodleCache:
-    def __init__(self, cache_dir: str, downloader: MoodleDownloader) -> None:
-        # yaml doesn't allow string concatenation, so we are doing this here
-        # make sure moodle cache folder is in app core pwd
-        self.directory = config().working_dir / Path(cache_dir)
+    def __init__(self, downloader: MoodleDownloader) -> None:
+        self.directory = config().moodle_cache_dir
         self.downloader = downloader
 
     def get(self, version: str) -> Path:
-        moodle_tar_name = _generate_file_name(version)
+        moodle_tar_name = _generate_archive_file_name(version)
         archive_path = self.directory / moodle_tar_name
         # if the selected moodle version isn't on disk, we need to download it
         if not archive_path.exists():
@@ -72,7 +71,17 @@ class MoodleCache:
 _DEFAULT_ARCHIVE_EXT = ".tar.gz"
 
 
-def _generate_file_name(version: str) -> str:
+def _generate_archive_file_name(version: str) -> str:
     if not version.startswith("v"):
         version = f"v{version}"
     return f"{version}{_DEFAULT_ARCHIVE_EXT}"
+
+
+def moodle_cache() -> MoodleCache:
+    # hacky, but hides implementation detail about the singleton and allows us
+    # to avoid the circular dependency issues if each import is directly
+    # embedded into the services
+    from ..app import Application
+
+    # sometimes mypy is just a funny thing.
+    return cast(MoodleCache, Application().domain.moodle_cache())

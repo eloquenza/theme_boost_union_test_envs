@@ -7,19 +7,32 @@ from packaging import version
 
 from ..exceptions import BoostUnionTestEnvValueError
 
-_CORE_KEY = "core"
-_REPO_KEY = "repos"
-_NGINX_KEY = "nginx"
+# Core related keys in config
+PWD = "working_dir"
+
+# Repo related keys in config
+REPO = "repos"
+BU = "boost_union"
+MDL_DKR = "moodle_docker"
+URL = "url"
+
+# Proxy related keys in env file
+NGINX = "nginx"
+WWW_BASE = "base_url"
+CERT_PATH = "cert_chain_path"
+PKEY_PATH = "cert_key_path"
+HTML_PATH = "overview_page_path"
+PROXY = "proxied"
 
 
 class ApplicationConfigManager:
     def __init__(
         self,
         config: dict[Any, Any],
-        environment_file: Path,
         moodle_versions_to_php_versions: dict[Any, Any],
+        environment_file: Path,
     ) -> None:
-        # for some reason, the passed argument 'config' isn't of type providers.Configuration anymore, which makes saving it and accessing all elements with the dot notation not possible
+        # for some reason, the passed arguments 'config' and 'moodle_versions_to_php_versions' are not of type providers.Configuration anymore, which makes saving it and accessing all elements with the dot notation not possible
 
         # reading environment-related configs from yaml
         with environment_file.open("r") as env:
@@ -36,36 +49,42 @@ class ApplicationConfigManager:
 
         # just exposing the values that are actual of value for cross cutting
         # concerns
-        # core related settings
-        self.working_dir = Path(environment["working_dir"]).resolve()
-        # implicitly truthy as python transforms yes and no
-        self.is_proxied = environment["proxied"]
+        # path related settings
+        self.working_dir = self.get_path(environment[PWD])
         self.infra_yaml = self.working_dir / "infrastructure.yaml"
         # nginx related settings
-        self.nginx_dir: Path = self.working_dir / config[_CORE_KEY][_NGINX_KEY]["dir"]
-        self.base_url = environment[_NGINX_KEY]["base_url"]
+        self.nginx_dir = self.working_dir / ".nginx/"
+        self.base_url = environment[NGINX][WWW_BASE]
+        # implicitly truthy as python transforms yes and no
+        self.is_proxied = environment[PROXY]
         # if we are setting up new test environments behind a proxy, these NEED # to be set so the reverse proxy will actually work correct
         if self.is_proxied and (
-            not environment[_NGINX_KEY]["cert_chain_path"]
-            or not environment[_NGINX_KEY]["cert_key_path"]
-            or not environment[_NGINX_KEY]["overview_page_path"]
+            not environment[NGINX][CERT_PATH]
+            or not environment[NGINX][PKEY_PATH]
+            or not environment[NGINX][HTML_PATH]
         ):
             raise BoostUnionTestEnvValueError(
                 "Certificate file paths as well as path for the overview webpage must be set"
             )
         # do not try to provide a default here, no sensible option left
-        self.cert_chain_path = environment[_NGINX_KEY]["cert_chain_path"]
-        self.cert_key_path = environment[_NGINX_KEY]["cert_key_path"]
+        self.cert_chain_path = environment[NGINX][CERT_PATH]
+        self.cert_key_path = environment[NGINX][PKEY_PATH]
         # default to working_dir/index.html; allows for debugging it
         self.overview_page_path = (
             self.working_dir / "index.html"
-            if not environment[_NGINX_KEY]["overview_page_path"]
-            else Path(environment[_NGINX_KEY]["overview_page_path"])
+            if not environment[NGINX][HTML_PATH]
+            else Path(environment[NGINX][HTML_PATH])
         )
         # moodle related settings
-        self.moodle_docker_dir = (
-            self.working_dir / config[_REPO_KEY]["moodle_docker"]["dir"]
-        )
+        self.moodle_cache_dir = self.working_dir / ".moodles/"
+        self.moodle_docker_dir = self.working_dir / ".moodle-docker"
+        self.moodle_docker_repo_url = config[REPO][MDL_DKR][URL]
+        # boost union related settings
+        self.boost_union_base_directory_name = "theme/boost_union"
+        self.boost_union_repo_url = config[REPO][BU][URL]
+
+    def get_path(self, path_name: str) -> Path:
+        return Path(path_name).resolve()
 
 
 def config() -> ApplicationConfigManager:

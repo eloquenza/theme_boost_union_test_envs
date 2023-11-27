@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any
 
 from ..cross_cutting import config, log, template_engine
-from ..domain import MoodleCache, TestContainer
-from ..domain.git import GitReference, GitRepository
+from ..domain import TestContainer, moodle_cache
+from ..domain.git import GitReference, clone_boost_union_repo
 from ..exceptions import VersionArgumentNeededError
 
 
@@ -12,12 +12,8 @@ class TestInfrastructure:
     def __init__(
         self,
         directory: Path,
-        boost_union_repo: GitRepository,
-        moodle_cache: MoodleCache,
     ) -> None:
         self.directory = directory
-        self.boost_union_repo = boost_union_repo
-        self.moodle_cache = moodle_cache
         self.template_engine = template_engine()
 
     def setup(
@@ -37,20 +33,22 @@ class TestInfrastructure:
             git_ref (GitReference): Denoting which Boost Union "version" will be used for this test infrastructure and all contained Moodle test containers
         """
         log().info(f"initializing new test infrastructure named '{self.directory}'")
-        self.boost_union_repo.clone_repo(self.directory, git_ref)
+        clone_boost_union_repo(self.directory, git_ref)
+        self._create_moodles_dir()
+        log().info("done init - find your test infrastructure here:")
+        log().info(f"\tpath: {self.directory }")
+
+    def _create_moodles_dir(self) -> None:
         moodles = self._get_moodles_dir()
         if not moodles.exists():
             log().info("oh, no moodles yet. starting the stove...")
             moodles.mkdir()
-        log().info("done init - find your test infrastructure here:")
-        log().info(f"\tpath: {self.directory }")
 
     def build(self, *versions: str) -> dict[Any, Any]:
         if not versions:
             raise VersionArgumentNeededError()
-        moodles = self._get_moodles_dir()
         # check the existing infrastructure if the selected moodle versions are already present
-        new_versions = self._find_sources_for_versions(moodles, *versions)
+        new_versions = self._find_sources_for_versions(*versions)
         if not new_versions:
             log().info(
                 "not building new envs - test envs already presented for selected moodle versions"
@@ -60,40 +58,44 @@ class TestInfrastructure:
         log().info("building envs for the following versions:")
         for version in new_versions:
             log().info(f"* {version}")
-        docker_sources = config().moodle_docker_dir
         built_moodles = {}
         for version_nr, archive_path in new_versions.items():
             log().info(f"{20*'-'} {version_nr} {20*'-'}")
             log().info("creating test env")
-            moodle_version_path = moodles / version_nr
-            moodle_source_path = moodle_version_path / "moodle"
-            moodle_version_path.mkdir(exist_ok=True)
+            # create a new moodle test environment, residing in a folder named after it's version
+            new_moodle_test_env = self._get_moodles_dir() / version_nr
+            # inside previously created folder, create a folder called "moodle" to contain the actually sources of said moodle version - will be mounted into our test containers
+            moodle_source_path = new_moodle_test_env / "moodle"
+            new_moodle_test_env.mkdir(exist_ok=True)
             # unpacking the archive will created a folder called "moodle-{ver}"
             # rename the folder afterwards to ensure moodle sources are at the
             # same location in every created test infrastructure
-            shutil.unpack_archive(archive_path, moodle_version_path)
-            extracted_path = moodle_version_path / f"moodle-{version_nr}"
+            shutil.unpack_archive(archive_path, new_moodle_test_env)
+            extracted_path = new_moodle_test_env / f"moodle-{version_nr}"
             shutil.move(extracted_path, moodle_source_path)
             log().info(f"extracted moodle {version} to {moodle_source_path}")
             # dirs_exist_ok needed so function doesn't raise FileExistsError
-            shutil.copytree(docker_sources, moodle_version_path, dirs_exist_ok=True)
-            log().info(f"copied docker files to {moodle_version_path}")
+            shutil.copytree(
+                config().moodle_docker_dir, new_moodle_test_env, dirs_exist_ok=True
+            )
+            log().info(f"copied docker files to {new_moodle_test_env}")
             log().info(
                 "create environment file with needed vars for our docker containers"
             )
             shutil.copy(
-                moodle_version_path / "config.docker-template.php",
+                new_moodle_test_env / "config.docker-template.php",
                 moodle_source_path / "config.php",
             )
             self.template_engine.docker_customisation(
-                moodle_version_path, self.directory / "theme" / "boost_union"
+                new_moodle_test_env,
+                self.directory / config().boost_union_base_directory_name,
             )
             self.template_engine.environment_file(
-                moodle_version_path, self.directory.name, version_nr
+                new_moodle_test_env, self.directory.name, version_nr
             )
-            container = TestContainer(moodle_version_path)
+            container = TestContainer(new_moodle_test_env)
             container.create()
-            host, port, pw, db_port = container.container_access_info()
+            host, port, pw, db_port = container.get_access_info()
             built_moodles[version_nr] = {
                 "status": "CREATED",
                 "url": f"https://{host}"
@@ -108,13 +110,13 @@ class TestInfrastructure:
         log().info("your moodles are cooked al-dente; enjoy")
         return built_moodles
 
-    def _find_sources_for_versions(self, path: Path, *versions: str) -> dict[str, Path]:
-        """This function iterates through the given versions list to return a dictionary which contains a Moodle version string mapped to it's downloaded source archive (tar.gz).
+    def _find_sources_for_versions(self, *versions: str) -> dict[str, Path]:
+        """This function iterates through the given list of versions to return a dictionary which contains Moodle version strings mapped to it's downloaded source archive (tar.gz); if they have not been already created inside the "./moodles" directory.
         If for a given version, the source archive does not exist locally, it will be downloaded to the "Moodle disk cache".
         The created dictionary will not contain Moodle versions for which a test environment already exists.
 
         Args:
-            path (Path): the path in which the "STOPPED test environments of this infrastructure reside
+            path (Path): the path in which the test environments of this infrastructure reside
             versions (tuple[str, ...]): the versions for which a new Moodle test environment should be created
 
         Returns:
@@ -122,10 +124,10 @@ class TestInfrastructure:
         """
         sources_to_versions: dict[str, Path] = {}
         for ver in versions:
-            vers_path = path / ver
+            vers_path = self._get_moodles_dir() / ver
             if not vers_path.exists():
                 # adding the Moodle version string + it's source archive via merge operator
-                sources_to_versions |= {ver: self.moodle_cache.get(ver)}
+                sources_to_versions |= {ver: moodle_cache().get(ver)}
         return sources_to_versions
 
     def _get_moodles_dir(self) -> Path:
