@@ -1,9 +1,7 @@
-import os
 import shutil
-from pathlib import Path
 
 from ..cross_cutting import config, log, template_engine
-from . import GitReference, GitReferenceType, GitRepository, clone_moodle_docker_repo
+from . import clone_moodle_docker_repo
 
 
 class Testbed:
@@ -28,6 +26,8 @@ class Testbed:
         if not self.nginx_dir.exists():
             log().info(f"creating nginx config directory @ {self.nginx_dir}")
             self.nginx_dir.mkdir()
+            template_engine().get_testenvs_base_dir().mkdir()
+            template_engine().overview_nginx_config()
             initialized = False
         if not self.docker_repo_dir.exists():
             log().info(f"cloning moodle_docker repo into {self.docker_repo_dir}")

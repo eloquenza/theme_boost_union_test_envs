@@ -23,6 +23,7 @@ CERT_PATH = "cert_chain_path"
 PKEY_PATH = "cert_key_path"
 HTML_PATH = "overview_page_path"
 PROXY = "proxied"
+SOFTLINKED_DIR = "softlinked_nginx_config_path"
 
 
 class ApplicationConfigManager:
@@ -54,6 +55,7 @@ class ApplicationConfigManager:
         self.infra_yaml = self.working_dir / "infrastructure.yaml"
         # nginx related settings
         self.nginx_dir = self.working_dir / ".nginx/"
+        self.softlinked_nginx_path = Path(environment[NGINX][SOFTLINKED_DIR])
         self.base_url = environment[NGINX][WWW_BASE]
         # implicitly truthy as python transforms yes and no
         self.is_proxied = environment[PROXY]
@@ -71,10 +73,11 @@ class ApplicationConfigManager:
         self.cert_key_path = environment[NGINX][PKEY_PATH]
         # default to working_dir/index.html; allows for debugging it
         self.overview_page_path = (
-            self.working_dir / "index.html"
+            self.working_dir
             if not environment[NGINX][HTML_PATH]
             else Path(environment[NGINX][HTML_PATH])
         )
+        self.overview_page_index = self.overview_page_path / "index.html"
         # moodle related settings
         self.moodle_cache_dir = self.working_dir / ".moodles/"
         self.moodle_docker_dir = self.working_dir / ".moodle-docker"

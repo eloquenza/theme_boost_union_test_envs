@@ -4,7 +4,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
 
-from ..cross_cutting import log
+from ..cross_cutting import config, log, template_engine
 from ..exceptions import MoodleTestEnvironmentDoesNotExistYetError
 
 
@@ -12,6 +12,9 @@ class TestContainer:
     def __init__(self, container_path: Path) -> None:
         # TODO: check if path exists
         self.path = container_path
+        self.version = self.path.name
+        # TODO: explain why parent.parent; specify path
+        self.infrastructure = self.path.parent.parent.name
         self.compose_script = "bin/moodle-docker-compose"
 
     # ignoring types here for both function declarations as it is impossible to make this legal pythonese work with mypy
@@ -79,7 +82,14 @@ class TestContainer:
         This optionally stops and then removes the container.
         """
         self._run_docker_command("down")
-        # TODO: removing the directory shouldn't be the concern of the TestContainer itself
+        nginx_conf = template_engine().create_moodle_nginx_conf_path(
+            self.infrastructure, self.version
+        )
+        log().info(
+            f"removing nginx configuration {nginx_conf} for container of {self.infrastructure}/{self.version}"
+        )
+        if nginx_conf.exists():
+            nginx_conf.unlink()
         if self.path.exists():
             shutil.rmtree(self.path)
 
@@ -98,11 +108,10 @@ class TestContainer:
 
     def _configure_manual_testing(self) -> None:
         admin_email = "admin@example.com"
-        version = self.path.name
-        infrastructure = self.path.parent.parent.name
-        short_name = f"{infrastructure} - {version}"
-        full_name = f"{infrastructure} - {version}"
-        summary = f"{infrastructure} - {version}"
+        # we do not actual care about concrete names here, so let's make it all the same; var naming is just kept for parity with CLI interface
+        short_name = f"{self.infrastructure} - {self.version}"
+        full_name = short_name
+        summary = short_name
         # create the correct tables on the database server
         self._run_local_php_script(
             "admin/cli/install_database.php",
@@ -147,9 +156,9 @@ class TestContainer:
         Args:
             action (str): a typical docker compose command that should be sent to the containers (up, down, stop, restart)
         """
-        result = subprocess.run(
-            [self._build_command(action)], cwd=self.path, shell=True
-        )
+        command = self._build_command(action)
+        log().info(f"executing {command}")
+        result = subprocess.run([command], cwd=self.path, shell=True)
         log().info(result)
 
     def _build_command(self, action: str) -> str:

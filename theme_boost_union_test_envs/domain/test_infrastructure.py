@@ -105,7 +105,9 @@ class TestInfrastructure:
                 "www_port": port,
                 "db_port": db_port,
             }
-            self.template_engine.nginx_config(self.directory.name, version_nr, port)
+            self.template_engine.moodle_nginx_config(
+                self.directory.name, version_nr, port
+            )
             log().info(f"test env for {version_nr} done")
         log().info("your moodles are cooked al-dente; enjoy")
         return built_moodles
@@ -133,13 +135,21 @@ class TestInfrastructure:
     def _get_moodles_dir(self) -> Path:
         return self.directory / "moodles"
 
-    def teardown(self, infrastructure_name: str) -> None:
-        log().info(f"starting teardown of test infrastructure {infrastructure_name}")
-        # TODO: then remove file from nginx; to make sure the moodles cannot be served anymore
-        # TODO: then call path rm to delete the folders
-        # TODO: then delete the whole folder
+    def teardown(self) -> None:
+        log().info(f"starting teardown of test infrastructure {self.directory.name}")
+        moodles = self._get_all_test_container()
+        for moodle in moodles:
+            log().info(
+                f"stopping and destroying container of {self.directory.name}/{moodle.path.name}"
+            )
+            moodle.destroy()
         # pathlib functions require the dir to be empty, but we just can safely
         # delete all files now, so we resort to shutil
         if self.directory.exists():
             shutil.rmtree(self.directory)
             log().info(f"removed test infrastructure {self.directory.name}")
+
+    def _get_all_test_container(self) -> list[TestContainer]:
+        return [
+            TestContainer(f) for f in self._get_moodles_dir().iterdir() if f.is_dir()
+        ]

@@ -102,9 +102,7 @@ class BoostUnionTestEnvCore:
         if not path.exists():
             raise InfrastructureDoesNotExistYetError()
         existing_infra = TestInfrastructure(path)
-        # TODO: check if container are running, stop them first
-        # TODO: then call docker remove to delete the images
-        existing_infra.teardown(infrastructure_name)
+        existing_infra.teardown()
         # Removing infrastructure from file database
         self.yaml_parser.remove_infrastructure(infrastructure_name)
 

@@ -26,8 +26,8 @@ class TemplateEngine:
         with index_html.open("r") as f:
             template = jinja2.Template(f.read())
         rendered_text = template.render(infrastructures)
-        if config().overview_page_path.parent.exists():
-            config().overview_page_path.write_text(rendered_text)
+        if config().overview_page_index.parent.exists():
+            config().overview_page_index.write_text(rendered_text)
 
     def docker_customisation(
         self, template_path: Path, boost_union_source_dir: Path
@@ -63,31 +63,43 @@ class TemplateEngine:
         replaced_strings = template.substitute(substitutes)
         env_file.write_text(replaced_strings)
 
-    def nginx_config(
-        self, infrastructure_name: str, moodle_version: str, port: str
-    ) -> None:
-        nginx_conf_template = self.template_path / "moodle_nginx.conf"
-        safe_name = self._create_compose_safe_name(infrastructure_name, moodle_version)
-        new_config = config().nginx_dir / f"{safe_name}.conf"
-        # TODO:
-        softlinked_nginx_dir = ""
-        # get only "path" from the fqdn, we don't need the domain name, called
-        # location in nginx
-        location = self._create_web_url(infrastructure_name, moodle_version).partition(
-            config().base_url
-        )[2]
+    def overview_nginx_config(self) -> None:
+        nginx_conf_template = self.template_path / "plesk_production_nginx.conf"
         substitutes = {
-            "REPLACE_LOCATION": location,
             "REPLACE_BASE_URL": config().base_url,
-            "REPLACE_PORT": port,
             "REPLACE_CERT_PATH": config().cert_chain_path,
             "REPLACE_PRIVKEY_PATH": config().cert_key_path,
-            "REPLACE_ACCESS_LOG_PATH": f"{softlinked_nginx_dir}/{safe_name}_proxy_access_ssl_log",
-            "REPLACE_ERROR_LOG_PATH": f"{softlinked_nginx_dir}/{safe_name}_proxy_error_ssl_log",
+            "REPLACE_PROXY_LOG_PATH": config().nginx_dir,
+            "REPLACE_WWW_ROOT": config().overview_page_path,
+            "REPLACE_SOFTLINKED_SUBDIRECTORY": config().softlinked_nginx_path,
         }
         template = Template(nginx_conf_template.read_text())
         # using safe_substitute here instead as the nginx config contains variables starting with "$", which would make the default substitute call throw an KeyError as we are not replacing the template placeholder which we do not want
         replaced_strings = template.safe_substitute(substitutes)
+        new_config = self.create_overview_nginx_conf_path()
+        new_config.write_text(replaced_strings)
+
+    def moodle_nginx_config(
+        self, infrastructure_name: str, moodle_version: str, port: str
+    ) -> None:
+        nginx_conf_template = self.template_path / "moodle_nginx.conf"
+        # get only "path" from the fqdn, we don't need the domain name, called
+        # location in nginx
+        location = self._create_web_url(infrastructure_name, moodle_version).partition(
+            # Make sure REPLACE_LOCATION does not contain a leading slash
+            config().base_url
+            + "/"
+        )[2]
+        substitutes = {
+            "REPLACE_LOCATION": location,
+            "REPLACE_PORT": port,
+        }
+        template = Template(nginx_conf_template.read_text())
+        # using safe_substitute here instead as the nginx config contains variables starting with "$", which would make the default substitute call throw an KeyError as we are not replacing the template placeholder which we do not want
+        replaced_strings = template.safe_substitute(substitutes)
+        new_config = self.create_moodle_nginx_conf_path(
+            infrastructure_name, moodle_version
+        )
         new_config.write_text(replaced_strings)
 
     def _create_web_url(
@@ -100,13 +112,35 @@ class TemplateEngine:
             web_url = web_url + f"/{infrastructure_name}/{moodle_version}"
         return web_url
 
+    def _create_nginx_conf_name(self, file_name: str) -> str:
+        return f"{file_name}.conf"
+
+    def create_overview_nginx_conf_path(self) -> Path:
+        return config().nginx_dir / self._create_nginx_conf_name(config().base_url)
+
+    def get_testenvs_base_dir(self) -> Path:
+        # will be created during test bed initialization, so we don't care about this here
+        return config().nginx_dir / "testenvs"
+
+    def create_moodle_nginx_conf_path(
+        self, infrastructure_name: str, moodle_version: str
+    ) -> Path:
+        return self.get_testenvs_base_dir() / self._create_nginx_conf_name(
+            self._create_file_name(infrastructure_name, moodle_version)
+        )
+
+    def _create_file_name(self, infrastructure_name: str, moodle_version: str) -> str:
+        return f"{infrastructure_name}-{moodle_version}"
+
     def _create_compose_safe_name(
         self, infrastructure_name: str, moodle_version: str
     ) -> str:
         compose_safe_version = self._create_compose_safe_version_string(moodle_version)
-        return f"{infrastructure_name+'-moodle-'+compose_safe_version}"
+        return self._create_file_name(infrastructure_name, compose_safe_version)
 
     def _create_compose_safe_version_string(self, version: str) -> str:
+        # Because docker compose does not allow dots in it's project name, we are replacing these by underscores
+        # https://docs.docker.com/compose/environment-variables/envvars/
         return version.replace(".", "_")
 
     def _create_new_admin_pw(self) -> str:
