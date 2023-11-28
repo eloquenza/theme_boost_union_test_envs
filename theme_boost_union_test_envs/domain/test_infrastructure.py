@@ -86,6 +86,11 @@ class TestInfrastructure:
                 new_moodle_test_env / "config.docker-template.php",
                 moodle_source_path / "config.php",
             )
+            # copy datagenerator into moodle root
+            shutil.copy(
+                config().moodle_cache_dir / "smartdata.php",
+                moodle_source_path / "smartdata.php",
+            )
             self.template_engine.docker_customisation(
                 new_moodle_test_env,
                 self.directory / config().boost_union_base_directory_name,

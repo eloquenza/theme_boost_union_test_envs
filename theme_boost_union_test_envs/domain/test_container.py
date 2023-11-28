@@ -127,6 +127,8 @@ class TestContainer:
             "admin/cli/cfg.php",
             "--name=theme --set=boost_union",
         )
+        # add some test data
+        self._run_local_php_script("smartdata.php", "")
 
     def _extract_from_env(self, var_name: str) -> str:
         """Extracts the value of the given variable name from the container's environment file.

@@ -1,5 +1,7 @@
 import shutil
 
+import requests
+
 from ..cross_cutting import config, log, template_engine
 from . import clone_moodle_docker_repo
 
@@ -22,6 +24,12 @@ class Testbed:
         if not self.moodle_cache_dir.exists():
             log().info(f"creating moodle cache directory @ {self.moodle_cache_dir}")
             self.moodle_cache_dir.mkdir()
+            # download datagenerator
+            url = "https://raw.githubusercontent.com/andrewnicols/moodle-datagenerator/master/smartdata.php"
+            datagenerator_script_path = self.moodle_cache_dir / "smartdata.php"
+            resp = requests.get(url, allow_redirects=True)
+            with datagenerator_script_path.open(mode="wb") as f:
+                f.write(resp.content)
             initialized = False
         if not self.nginx_dir.exists():
             log().info(f"creating nginx config directory @ {self.nginx_dir}")
