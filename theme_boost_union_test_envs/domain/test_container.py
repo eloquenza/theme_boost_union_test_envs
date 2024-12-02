@@ -4,7 +4,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
 
-from ..cross_cutting import config, log, template_engine
+from ..cross_cutting import config, log, template_engine, yaml_parser
 from ..exceptions import MoodleTestEnvironmentDoesNotExistYetError
 
 
@@ -55,8 +55,10 @@ class TestContainer:
         """Spawns a sub-shell to call 'docker-compose up -d' on this container.
         This starts the container. Furthermore, this function will call a script to wait until the DB has started, to make sure the services can be used properly when this function has executed successfully.
         """
+        # Wait until containers have been started and the DB is available
         self._run_docker_command("up -d && bin/moodle-docker-wait-for-db")
-        self._configure_manual_testing()
+        # Prepare the Moodle inside the test container for the actual testing, i.e. run postcondition scripts, e.g. configure admin, make sure DB uses correct schemata and is well populated, etc ...
+        self._configure_moodle_instance()
         host, port, pw, _ = self.get_access_info()
         log().info("Please access the created Moodle container here:")
         if config().is_proxied:
@@ -111,9 +113,9 @@ class TestContainer:
         db_port = self._extract_from_env("MOODLE_DOCKER_DB_PORT")
         return (www_host, www_port, admin_password, db_port)
 
-    def _configure_manual_testing(self) -> None:
+    def _configure_moodle_instance(self) -> None:
         admin_email = "admin@example.com"
-        # we do not actual care about concrete names here, so let's make it all the same; var naming is just kept for parity with CLI interface
+        # we do not actual care about concrete names here, so let's make it all the same; moodle naming will just use infrastructure name for parity with CLI interface
         short_name = f"{self.infrastructure} - {self.version}"
         full_name = short_name
         summary = short_name
@@ -122,13 +124,19 @@ class TestContainer:
             "admin/cli/install_database.php",
             f'--agree-license --fullname="{full_name}" --shortname="{short_name}" --summary="{summary}" --adminpass=$MOODLE_ADMIN_PASSWORD --adminemail="{admin_email}"',
         )
-        # activate "Boost Union" theme
-        self._run_local_php_script(
-            "admin/cli/cfg.php",
-            "--name=theme --set=boost_union",
-        )
+        # allow plugins to hook up last needed operations
+        self._run_postcondition_scripts_for_specific_plugins()
         # add some test data
         self._run_local_php_script("smartdata.php", "")
+
+    def _run_postcondition_scripts_for_specific_plugins(self) -> None:
+        plugin = yaml_parser().infrastructure_info(self.infrastructure)["plugin"]
+        if plugin == "boost_union":
+            # Activate "Boost Union" theme per default
+            self._run_local_php_script(
+                "admin/cli/cfg.php",
+                "--name=theme --set=boost_union",
+            )
 
     def _extract_from_env(self, var_name: str) -> str:
         """Extracts the value of the given variable name from the container's environment file.

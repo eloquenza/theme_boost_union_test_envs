@@ -1,29 +1,78 @@
-<html>
-<title>"Boost Union" test environments</title>
-<h1>"Boost Union" test environments</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>"Moodle an Hochschulen e.V" test environments</title>
+</head>
+<style>
+details > summary {
+  width: 80vw;
+  background-color: #eeeeee;
+  border: none;
+  box-shadow: 1px 1px 2px #bbbbbb;
+  cursor: pointer;
+}
+div {
+  padding: 0.5em;
+}
+hr.top {
+  border: none;
+  height: 4px;
+  background-color: #333;
+}
+hr.plugins {
+  border: none;
+  height: 2px;
+  background-color: #333;
+}
+</style>
+<body>
+<h1>"Moodle an Hochschulen e.V" test environments</h1>
+<hr class="top">
 {% if not infrastructures %}
-<li>No test infrastructure is set up yet.</li>
+<p>No test infrastructure is set up yet.</p>
 {% endif %}
-{% for infrastructure in infrastructures %}
-<h2><b>{{infrastructure}}</b></h2>
-    <ul>
-        <li>Boost Union version: {{infrastructures[infrastructure]["git_ref"]["type"]}}:{{infrastructures[infrastructure]["git_ref"]["reference"]}}</li>
-        {% if not infrastructures[infrastructure]["moodles"] %}
-        <li>No moodles available for this test infrastructure</li>
-        {% endif %}
-        {% if infrastructures[infrastructure]["moodles"] %}
-        <li>Available moodles:</li>
-        <ul>
-            {% for moodle in infrastructures[infrastructure]["moodles"] %}
-            <li><b>{{moodle}}</b></li>
+{% for plugin, environments in infrastructures.items() %}
+<h2><b>{{plugin}}</b></h2>
+<details>
+    <summary>Click to see/hide all test environments</summary>
+    {% for environment, data in environments.items() %}
+        <div>
+        <h3><b>{{environment}}</b></h3>
+            <details open>
+            <summary>Click to see/hide information about this environment</summary>
+            <ul>
+                <li>Plugin:</li>
+                    <ul>
+                        <li>Name: {{data["plugin"]}}</li>
+                        <li>Version: {{data["git_ref"]["type"]}}:{{data["git_ref"]["reference"]}}</li>
+                    </ul>
+                <li>Timestamps: </li>
+                    <ul>
+                        <li>Created at: {{data["created_at"]}}</li>
+                        <li>Last modified at: {{data["last_modified_at"]}}</li>
+                    </ul>
+                {% if not data["moodles"] %}
+                <li>No moodles available for this test infrastructure</li>
+                {% endif %}
+                {% if data["moodles"] %}
+                <li>Available moodles:</li>
                 <ul>
-                    <li>Status: {{infrastructures[infrastructure]["moodles"][moodle]["status"]}}</li>
-                    <li>URL: <a href="{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}">{{infrastructures[infrastructure]["moodles"][moodle]["url"]}}</a></li>
-                    <li>Admin password: {{infrastructures[infrastructure]["moodles"][moodle]["admin_pw"]}}</li>
+                    {% for moodle in data["moodles"] %}
+                    <li><b>{{moodle}}</b></li>
+                        <ul>
+                            <li>Status: {{data["moodles"][moodle]["status"]}}</li>
+                            <li>URL: <a href="{{data["moodles"][moodle]["url"]}}">{{data["moodles"][moodle]["url"]}}</a></li>
+                            <li>Admin password: {{data["moodles"][moodle]["admin_pw"]}}</li>
+                        </ul>
+                    {% endfor %}
                 </ul>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </ul>
+                {% endif %}
+            </ul>
+            </details>
+        </div>
+    {% endfor %}
+</details>
+<hr class="plugins">
 {% endfor %}
+</body>
 </html>

@@ -1,0 +1,9 @@
+boost_union:
+  url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+  install_folder: "theme/boost_union"
+bookit:
+  url: "https://github.com/melanietreitinger/mod_bookit"
+  install_folder: "mod/bookit"
+availability_password:
+  url: "https://github.com/moodle-an-hochschulen/moodle-availability_password"
+  install_folder: "availability/condition/password"

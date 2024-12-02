@@ -1,28 +1,9 @@
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 from git import Repo
 
 from ..cross_cutting import config, log
-
-Branch = str
-Commit = str
-PullRequest = int
-Tag = str
-
-
-class GitReferenceType(str, Enum):
-    BRANCH = "branch"
-    COMMIT = "commit"
-    PULL_REQUEST = "pr"
-    TAG = "tag"
-
-
-@dataclass
-class GitReference:
-    ref: Branch | Commit | PullRequest | Tag
-    type: GitReferenceType
+from ..entities import GitReference, GitReferenceType, MoodlePlugin
 
 
 class GitRepository:
@@ -79,10 +60,14 @@ class GitRepository:
         return repo
 
 
-def clone_boost_union_repo(directory: Path, git_ref: GitReference) -> GitRepository:
+def clone_plugin_repo(
+    plugin: MoodlePlugin, directory: Path, git_ref: GitReference
+) -> GitRepository:
+    # extracts the url and install_folder from our supported-plugins.yml
+    repo_url, install_folder = config().supported_plugins[plugin.value].values()
     return GitRepository(
-        config().boost_union_repo_url,
-        directory / config().boost_union_base_directory_name,
+        repo_url,
+        directory / install_folder,
         git_ref,
     )
 

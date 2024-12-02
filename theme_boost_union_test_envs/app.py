@@ -47,6 +47,7 @@ class CrossCuttingConcerns(containers.DeclarativeContainer):
     moodle_versions_to_php_versions = providers.Configuration(
         yaml_files=["moodle-versions-to-supported-php-versions.yaml"]
     )
+    supported_plugins = providers.Configuration(yaml_files=["supported-plugins.yml"])
 
     config_manager = providers.Singleton(
         ApplicationConfigManager,
@@ -56,6 +57,7 @@ class CrossCuttingConcerns(containers.DeclarativeContainer):
         # argument to read from another config file
         environment_file=config.environment.as_(lambda p: Path(sys.path[0]) / p),
         moodle_versions_to_php_versions=moodle_versions_to_php_versions,
+        supported_plugins=supported_plugins,
     )
 
     infrastructure_yaml_parser = providers.Singleton(InfrastructureYAMLParser)

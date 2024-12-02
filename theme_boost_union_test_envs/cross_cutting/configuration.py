@@ -1,6 +1,7 @@
+import pprint
 import sys
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Tuple, cast
 
 import yaml
 from packaging import version
@@ -12,7 +13,6 @@ PWD = "working_dir"
 
 # Repo related keys in config
 REPO = "repos"
-BU = "boost_union"
 MDL_DKR = "moodle_docker"
 URL = "url"
 
@@ -31,6 +31,7 @@ class ApplicationConfigManager:
         self,
         config: dict[Any, Any],
         moodle_versions_to_php_versions: dict[Any, Any],
+        supported_plugins: dict[Any, Any],
         environment_file: Path,
     ) -> None:
         # for some reason, the passed arguments 'config' and 'moodle_versions_to_php_versions' are not of type providers.Configuration anymore, which makes saving it and accessing all elements with the dot notation not possible
@@ -47,6 +48,8 @@ class ApplicationConfigManager:
             ]
             for moodle_ver, php_vers in moodle_versions_to_php_versions.items()
         }
+
+        self.supported_plugins = supported_plugins
 
         # just exposing the values that are actual of value for cross cutting
         # concerns
@@ -82,12 +85,13 @@ class ApplicationConfigManager:
         self.moodle_cache_dir = self.working_dir / ".moodles/"
         self.moodle_docker_dir = self.working_dir / ".moodle-docker"
         self.moodle_docker_repo_url = config[REPO][MDL_DKR][URL]
-        # boost union related settings
-        self.boost_union_base_directory_name = "theme/boost_union"
-        self.boost_union_repo_url = config[REPO][BU][URL]
 
     def get_path(self, path_name: str) -> Path:
         return Path(path_name).resolve()
+
+    def get_plugin_information(self, plugin_name: str) -> Tuple[str, str]:
+        repo_url, install_folder = config().supported_plugins[plugin_name].values()
+        return repo_url, install_folder
 
 
 def config() -> ApplicationConfigManager:

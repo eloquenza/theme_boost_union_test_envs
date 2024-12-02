@@ -2,9 +2,10 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from ..cross_cutting import config, log, template_engine
+from ..cross_cutting import config, log, template_engine, yaml_parser
 from ..domain import TestContainer, moodle_cache
-from ..domain.git import GitReference, clone_boost_union_repo
+from ..domain.git import clone_plugin_repo
+from ..entities import GitReference, MoodlePlugin
 from ..exceptions import VersionArgumentNeededError
 
 
@@ -18,22 +19,23 @@ class TestInfrastructure:
 
     def setup(
         self,
+        plugin: MoodlePlugin,
         git_ref: GitReference,
     ) -> None:
-        """Setups the test infrastructure for a given "Boost Union" 'version' (denoted by it's git reference). To do so, it creates the following directory structure, e.g.:
+        """Setups the test infrastructure for a given plugin 'version' (denoted by it's git reference). To do so, it creates the following directory structure, e.g.:
             ./$infrastructure_name
             |-- ./moodles/
-            |-- ./theme/boost_union
+            |-- ./$plugin_install_dir/... (example: "./theme/boost_union" for the plugin "Boost Union")
 
         The infrastructure name is given during the construction of the object.
         The "moodles" sub-directory will contain all Moodle test container files, i.e. their docker compose service declarations and other scripts as well as the sources to the Moodle version.
-        The "./theme/boost_union" sub-directory will contain the cloned git repository of "Boost Union" with the given git reference. This directory will be mounted into each Moodle test container.
+        The "./$plugin_install_dir" sub-directory will contain the cloned git repository of the wanted plugin with the given git reference. This directory will be mounted into each Moodle test container.
 
         Args:
-            git_ref (GitReference): Denoting which Boost Union "version" will be used for this test infrastructure and all contained Moodle test containers
+            git_ref (GitReference): Denoting which plugin "version" will be used for this test infrastructure and all contained Moodle test containers
         """
         log().info(f"initializing new test infrastructure named '{self.directory}'")
-        clone_boost_union_repo(self.directory, git_ref)
+        clone_plugin_repo(plugin, self.directory, git_ref)
         self._create_moodles_dir()
         log().info("done init - find your test infrastructure here:")
         log().info(f"\tpath: {self.directory }")
@@ -54,11 +56,21 @@ class TestInfrastructure:
                 "not building new envs - test envs already presented for selected moodle versions"
             )
             return {}
+
         # create a new test environment for the remaining moodle versions
         log().info("building envs for the following versions:")
         for version in new_versions:
             log().info(f"* {version}")
         built_moodles = {}
+
+        # Checking for which plugin we are building moodles - done here via checking the infrastructure file because there is no other way of knowing how in the current setup. feels hacky, but I didn't find another way around.
+        # Bad: Moving the check to the constructor has issues as the setup command uses and TestInfrastructure, but can't read from infrastructure.yaml
+        # Bad: Forcing the plugin name to be given at every command, so it's available already via function call/argument - overwhelms user
+        # Bad: Moving the check further up, as the plugin name can surely be read from infrastructure.yaml in every other case than the "setup" command - this introduces changes in multiple spots that actually do not care for which plugin Moodles/Docker container are modified.
+        # Good, but not feasible as I can't allocate enough time: better would be a daemon, which holds all these objects in-mem anyways, as then changing this class to be an actually entity would make sense.
+        plugin = yaml_parser().get_plugin_for_infrastructure(self.directory.name)
+        _, install_folder = config().get_plugin_information(plugin.value)
+
         for version_nr, archive_path in new_versions.items():
             log().info(f"{20*'-'} {version_nr} {20*'-'}")
             log().info("creating test env")
@@ -73,7 +85,7 @@ class TestInfrastructure:
             shutil.unpack_archive(archive_path, new_moodle_test_env)
             extracted_path = new_moodle_test_env / f"moodle-{version_nr}"
             shutil.move(extracted_path, moodle_source_path)
-            log().info(f"extracted moodle {version} to {moodle_source_path}")
+            log().info(f"extracted moodle {version_nr} to {moodle_source_path}")
             # dirs_exist_ok needed so function doesn't raise FileExistsError
             shutil.copytree(
                 config().moodle_docker_dir, new_moodle_test_env, dirs_exist_ok=True
@@ -93,7 +105,8 @@ class TestInfrastructure:
             )
             self.template_engine.docker_customisation(
                 new_moodle_test_env,
-                self.directory / config().boost_union_base_directory_name,
+                self.directory,
+                install_folder,
             )
             self.template_engine.environment_file(
                 new_moodle_test_env, self.directory.name, version_nr
@@ -103,9 +116,11 @@ class TestInfrastructure:
             host, port, pw, db_port = container.get_access_info()
             built_moodles[version_nr] = {
                 "status": "CREATED",
-                "url": f"https://{host}"
-                if config().is_proxied
-                else f"http://{host}:{port}",
+                "url": (
+                    f"https://{host}"
+                    if config().is_proxied
+                    else f"http://{host}:{port}"
+                ),
                 "admin_pw": pw,
                 "www_port": port,
                 "db_port": db_port,

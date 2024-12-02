@@ -1,6 +1,7 @@
 import secrets
 import socket
 import string
+from collections import defaultdict
 from contextlib import closing
 from pathlib import Path
 from string import Template
@@ -30,11 +31,16 @@ class TemplateEngine:
             config().overview_page_index.write_text(rendered_text)
 
     def docker_customisation(
-        self, template_path: Path, boost_union_source_dir: Path
+        self,
+        template_path: Path,
+        test_environment_base_path: Path,
+        plugin_install_path: str,
     ) -> None:
         docker_customisation_file = template_path / "local.yml"
         substitutes = {
-            "REPLACE_BOOST_UNION_SOURCE_PATH": boost_union_source_dir,
+            "REPLACE_PLUGIN_SOURCE_PATH": test_environment_base_path
+            / plugin_install_path,
+            "REPLACE_PLUGIN_INSTALL_DIR": plugin_install_path,
         }
         template = Template(docker_customisation_file.read_text())
         replaced_strings = template.substitute(substitutes)

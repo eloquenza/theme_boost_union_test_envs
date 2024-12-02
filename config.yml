@@ -1,8 +1,6 @@
 # if not used for local testing: change to correct environment
 environment: "env.local.yml"
 repos:
-  boost_union:
-    url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
   moodle_docker:
     url: "https://github.com/eloquenza/moodle-docker"
 adapters:

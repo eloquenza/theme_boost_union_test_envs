@@ -5,8 +5,8 @@ import fire
 from git import GitCommandError
 
 from ...core import BoostUnionTestEnvCore
-from ...cross_cutting import log
-from ...domain.git import GitReference, GitReferenceType
+from ...cross_cutting import config, log
+from ...entities import GitReference, GitReferenceType, MoodlePlugin
 from ...exceptions import (
     InfrastructureDoesNotExistYetError,
     InvalidMoodleVersionError,
@@ -39,13 +39,18 @@ class BoostUnionTestEnvCLI:
         self.core.init_testbed()
 
     def setup(
-        self, infrastructure_name: str, git_ref_type: str, git_ref_name: str | int
+        self,
+        infrastructure_name: str,
+        plugin_name: str,
+        git_ref_type: str,
+        git_ref_name: str | int,
     ) -> None:
         """The 'setup' command creates a new test infrastructure for a given Boost Union "version". This entails creating a folder in the configured working directory with the given name, creating a subdirectory with the name "moodles", in which the files for the different Moodle containers will reside in, and a "theme" subdirectory, in which Boost Union will be cloned into. The "theme" subdirectory will be mounted into each Moodle container created later on.
         This is the first step needed to setup a new environment for manual testing.
 
         Args:
             infrastructure_name (str): Name the test infrastructure should have. Used for the identification of said infrastructure, as well as for it's folder in the configured working dir.
+            plugin_name (str): Name of the plugin you want to test. Valid values: boost_union, bookit
             git_ref_type (str): String which describes of which type the upcoming git reference will be. Valid values: "commit", "branch", "pr" or "tag"
             git_ref_name (str | int): A valid git reference of the "Boost Union" theme repository which will be used to clone said repository Valid values: A commit sha, a branch name, a pr number or a tag name.
 
@@ -53,12 +58,17 @@ class BoostUnionTestEnvCLI:
             fire.core.FireError: An error describing that either the passed git reference type is invalid or that the name is already in use by another test infrastructure
         """
         try:
+            if plugin_name not in config().supported_plugins:
+                raise fire.core.FireError(
+                    f"Plugin {plugin_name} either does not exist or was mis-spelled"
+                )
             if not any([git_ref_type in t for t in GitReferenceType]):
                 raise fire.core.FireError(
-                    "The 2nd argument needs to be either commit, branch, pr OR tag"
+                    "The 3rd argument needs to be either commit, branch, pr OR tag"
                 )
             git_ref = GitReference(git_ref_name, GitReferenceType(git_ref_type))
-            self.core.setup_infrastructure(infrastructure_name, git_ref)
+            plugin = MoodlePlugin(plugin_name)
+            self.core.setup_infrastructure(infrastructure_name, plugin, git_ref)
         except GitCommandError:
             raise fire.core.FireError(
                 "Given git reference does not exist; please check it's spelling"

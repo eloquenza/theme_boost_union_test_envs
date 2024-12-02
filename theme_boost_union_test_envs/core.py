@@ -1,5 +1,6 @@
 import functools
 import subprocess
+from collections import defaultdict
 from pathlib import Path
 from pprint import PrettyPrinter
 from typing import Any, Callable
@@ -12,7 +13,8 @@ from .cross_cutting import (
     template_engine,
     yaml_parser,
 )
-from .domain import GitReference, Testbed, TestContainer, TestInfrastructure
+from .domain import Testbed, TestContainer, TestInfrastructure
+from .entities import GitReference, MoodlePlugin
 from .exceptions import (
     InfrastructureDoesNotExistYetError,
     NameAlreadyTakenError,
@@ -36,8 +38,13 @@ def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
         value = func(*args, **kwargs)
         # make sure the html page is updated after each command
         infrastructure_yaml = yaml_parser().load_testbed_info()
+        # Using a defaultdict here to make sure the following operation doesn't result in a KeyError when adding keys for the first time
+        envs_sorted_by_plugin = defaultdict(dict)
+        for infra_name, info in infrastructure_yaml.items():
+            envs_sorted_by_plugin[info["plugin"]] |= {infra_name: info}
+        print(envs_sorted_by_plugin)
         template_engine().test_environment_overview_html(
-            {"infrastructures": infrastructure_yaml}
+            {"infrastructures": envs_sorted_by_plugin}
         )
         return value
 
@@ -85,17 +92,15 @@ class BoostUnionTestEnvCore:
     @recreate_overview_html
     @check_testbed_existence
     def setup_infrastructure(
-        self, infrastructure_name: str, git_ref: GitReference
+        self, infrastructure_name: str, plugin: MoodlePlugin, git_ref: GitReference
     ) -> None:
         path = config().working_dir / infrastructure_name
         if path.exists():
             raise NameAlreadyTakenError("Infrastructure exists already")
         new_infra = TestInfrastructure(path)
-        new_infra.setup(git_ref)
-        # Adding infrastructure name + gitref to file database
-        self.yaml_parser.new_infrastructure(
-            infrastructure_name, git_ref.ref, git_ref.type.name
-        )
+        new_infra.setup(plugin, git_ref)
+        # Adding infrastructure name, plugin_name + gitref to file database
+        self.yaml_parser.new_infrastructure(infrastructure_name, plugin, git_ref)
 
     @recreate_overview_html
     @check_testbed_existence
