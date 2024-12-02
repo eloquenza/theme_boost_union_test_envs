@@ -1,5 +1,5 @@
 from collections.abc import MutableMapping
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 from typing import Any, cast
 
 import yaml
@@ -13,7 +13,7 @@ from . import config
 def add_last_modified_time(
     infrastructure_name: str, yaml: MutableMapping[Any, Any]
 ) -> MutableMapping[Any, Any]:
-    current_time = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+    current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     data = {
         infrastructure_name: {
             "last_modified_at": current_time,
@@ -51,7 +51,7 @@ class InfrastructureYAMLParser:
     def new_infrastructure(
         self, infrastructure_name: str, plugin: MoodlePlugin, git_ref: GitReference
     ) -> None:
-        current_time = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         data: dict[str, dict[str, Any]] = {
             infrastructure_name: {
                 # created_at and last_modified_at are the same, as the infrastructure is new, so the times must co-incide
