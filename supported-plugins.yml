@@ -1,9 +1,60 @@
-boost_union:
-  url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
-  install_folder: "theme/boost_union"
-bookit:
-  url: "https://github.com/melanietreitinger/mod_bookit"
-  install_folder: "mod/bookit"
+atto_styles:
+  url: "https://github.com/moodle-an-hochschulen/moodle-atto_styles"
+  install_folder: "lib/editor/atto/plugins/styles"
+availability_cohort:
+  url: "https://github.com/moodle-an-hochschulen/moodle-availability_cohort"
+  install_folder: "availability/condition/cohort"
 availability_password:
   url: "https://github.com/moodle-an-hochschulen/moodle-availability_password"
   install_folder: "availability/condition/password"
+availability_role:
+  url: "https://github.com/moodle-an-hochschulen/moodle-availability_role"
+  install_folder: "availability/condition/role"
+auth_ldap_syncplus:
+  url: "https://github.com/moodle-an-hochschulen/moodle-auth_ldap_syncplus"
+  install_folder: "auth/ldap_syncplus"
+block_cohortspecifichtml:
+  url: "https://github.com/moodle-an-hochschulen/moodle-block_cohortspecifichtml"
+  install_folder: "blocks/cohortspecifichtml"
+block_people:
+  url: "https://github.com/moodle-an-hochschulen/moodle-block_people"
+  install_folder: "blocks/people"
+boost_union:
+  url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union"
+  install_folder: "theme/boost_union"
+boost_union_child:
+  url: "https://github.com/moodle-an-hochschulen/moodle-theme_boost_union_child"
+  install_folder: "theme/boost_union_child"
+bookit:
+  url: "https://github.com/melanietreitinger/mod_bookit"
+  install_folder: "mod/bookit"
+local_bulkenrol:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_bulkenrol"
+  install_folder: "local/bulkenrol"
+local_profilecohort:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_profilecohort"
+  install_folder: "local/profilecohort"
+local_profiletheme:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_profiletheme"
+  install_folder: "local/profiletheme"
+local_resort_courses:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_resort_courses"
+  install_folder: "local/resort_courses"
+local_sandbox:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_sandbox"
+  install_folder: "local/sandbox"
+local_session_keepalive:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_session_keepalive"
+  install_folder: "local/session_keepalive"
+local_staticpage:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_staticpage"
+  install_folder: "local/staticpage"
+local_maintenance_livecheck:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_maintenance_livecheck"
+  install_folder: "local/maintenance_livecheck"
+local_navbarplus:
+  url: "https://github.com/moodle-an-hochschulen/moodle-local_navbarplus"
+  install_folder: "local/navbarplus"
+tool_coursefields:
+  url: "https://github.com/moodle-an-hochschulen/moodle-tool_coursefields"
+  install_folder: "admin/tool/coursefields"
