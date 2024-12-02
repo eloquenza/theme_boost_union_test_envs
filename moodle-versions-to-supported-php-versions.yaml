@@ -11,10 +11,13 @@
 # This only works because the moodle-php-apache project defines image tags to be the same as php tags (with a few notable differences, that we do not care for)
 # generally: only list breakpoints here, no need to pollute the list.
 # e.g. either new Moodle major/minor release, or new PHP requirements
+4.5.0: [8.1, 8.3]
+4.4:   [8.1, 8.3]
 4.3:   [8.0, 8.2]
 4.2.3: [8.0, 8.2]
 4.2:   [8.0, 8.1]
-4.1:   [7.4, 8.1]
+4.1.2: [7.4, 8.1]
+4.1:   [7.4, 8.0]
 4.0:   [7.3, 8.0]
 3.11:  [7.3, 8.0]
 # 3.10 not listed, has same requirements as 3.9
