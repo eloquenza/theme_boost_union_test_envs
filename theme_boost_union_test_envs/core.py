@@ -42,7 +42,6 @@ def recreate_overview_html(func: Callable[..., Any]) -> Callable[..., Any]:
         envs_sorted_by_plugin = defaultdict(dict)
         for infra_name, info in infrastructure_yaml.items():
             envs_sorted_by_plugin[info["plugin"]] |= {infra_name: info}
-        print(envs_sorted_by_plugin)
         template_engine().test_environment_overview_html(
             {"infrastructures": envs_sorted_by_plugin}
         )

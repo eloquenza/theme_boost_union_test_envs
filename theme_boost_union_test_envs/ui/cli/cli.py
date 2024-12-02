@@ -1,4 +1,5 @@
 import sys
+from pprint import PrettyPrinter
 from typing import Any
 
 import fire
@@ -27,6 +28,19 @@ class BoostUnionTestEnvCLI:
     def list(self) -> None:
         try:
             self.core.list_infrastructures()
+        except TestbedDoesNotExistYetError:
+            raise fire.core.FireError(
+                "No test infrastructure can be found as the test bed has not been initialized yet. Please initialize the test bed."
+            )
+
+    def list_testable_plugins(self) -> None:
+        try:
+            supported_plugins = [*config().supported_plugins.keys()]
+            log().info(
+                "Here are all plugins for which you can create a test environment:"
+            )
+            for plugin in supported_plugins:
+                log().info(f"* {plugin}")
         except TestbedDoesNotExistYetError:
             raise fire.core.FireError(
                 "No test infrastructure can be found as the test bed has not been initialized yet. Please initialize the test bed."
@@ -220,6 +234,8 @@ def cli_main(core: BoostUnionTestEnvCore) -> None:
     # Initializes the Fire library with the functions we wanna see in the CLI.
     fire.Fire(
         {
+            # help related commands
+            "list-testable-plugins": cli.list_testable_plugins,
             # testbed related commands
             "init": cli.init,
             # test environment related commands
